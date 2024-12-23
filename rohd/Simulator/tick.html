@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the tick method from the Simulator class, for the Dart programming language.">
+  <title>tick method - Simulator class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
+    <li class="self-crumb">tick static method</li>
+  </ol>
+  <div class="self-name">tick</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;Simulator-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">tick</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name ">tick</span>(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>A single simulation tick.</p>
+<p>Takes the simulator through all actions within the next pending
+timestamp, and passes through all events and phases on the way.</p>
+<p>If there are no timestamps pending to execute, nothing will execute.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tick() async {
+  if (_injectedActions.isNotEmpty) {
+    &#47;&#47; case 1 : ( the usual Rohd case )
+    &#47;&#47; The previous delta cycle did NOT do
+    &#47;&#47; &#39;registerAction( _currentTimeStamp );&#39;.
+    &#47;&#47; In that case, _pendingTimestamps[_currentTimestamp] is null so we will
+    &#47;&#47; add a new empty list, which will trigger a new delta cycle.
+    &#47;&#47;
+    &#47;&#47; case 2 :
+    &#47;&#47; The previous delta cycle DID do &#39;registerAction( _currentTimestamp );&#39;.
+    &#47;&#47; In that case, there is *already* another tick scheduled for
+    &#47;&#47; _currentTimestamp, and the injected actions will get called in
+    &#47;&#47;  the normal way.
+    &#47;&#47;
+    &#47;&#47; Either way, the end result is that a whole new tick gets scheduled for
+    &#47;&#47; _currentTimestamp and any outstanding injected actions get executed.
+
+    &#47;&#47; ignore: unnecessary_lambdas
+    _pendingTimestamps.putIfAbsent(_currentTimestamp, () =&gt; ListQueue());
+  }
+
+  &#47;&#47; the main event loop
+  if (_updateTimeStamp()) {
+    _preTick();
+    await _mainTick();
+    _clkStable();
+    await _outOfTick();
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
+    <li class="self-crumb">tick static method</li>
+</ol>
+
+    <h5>Simulator class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.5.3
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

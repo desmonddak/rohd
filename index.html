@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="rohd API docs, for the Dart programming language.">
+  <title>rohd - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://intel.github.io/rohd-website">rohd package</a></li>
+  </ol>
+  <div class="self-name">rohd</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <p align="center">
+  <img alt="ROHD" src="https://intel.github.io/rohd-website/assets/images/rohd_logo_w_white_background.svg">
+</p>
+<h1 id="rapid-open-hardware-development-rohd-framework">Rapid Open Hardware Development (ROHD) Framework</h1>
+<p><a href="https://github.com/intel/rohd/actions/workflows/general.yml"><img src="https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push" alt="Tests"></a>
+<a href="https://intel.github.io/rohd/rohd/rohd-library.html"><img src="https://img.shields.io/badge/API%20Docs-generated-success" alt="API Docs"></a>
+<a href="https://discord.gg/jubxF84yGw"><img src="https://img.shields.io/discord/1001179329411166267?label=Chat" alt="Chat"></a>
+<a href="https://github.com/intel/rohd/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSD--3-blue" alt="License"></a>
+<a href="https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg" alt="Contributor Covenant"></a></p>
+<p>ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.</p>
+<h2 id="documentation">Documentation</h2>
+<p>For documentation, guides, and more, <a href="https://intel.github.io/rohd-website/"><strong>visit the ROHD Website!</strong></a></p>
+<ul>
+<li><a href="https://intel.github.io/rohd-website/get-started/overview/">Install now</a></li>
+<li><a href="https://dartpad.dev/?id=375e800a9d0bd402c9bfa5ebe2210c40">Try it in-browser</a></li>
+<li><a href="https://intel.github.io/rohd-website/docs/sample-example/">User Guide</a></li>
+<li><a href="https://github.com/intel/rohd/tree/main/doc/tutorials">Tutorials</a></li>
+<li><a href="https://www.youtube.com/@ROHD-DEV">YouTube Channel</a></li>
+<li><a href="https://intel.github.io/rohd/rohd/rohd-library.html">API Docs</a></li>
+<li><a href="https://intel.github.io/rohd-website/blog/">Blog</a></li>
+<li><a href="https://github.com/intel/rohd/blob/main/CONTRIBUTING.md">Contributing</a></li>
+</ul>
+<p>You can also open this repository in a GitHub Codespace to run the example in your browser with a full IDE.  This is also an easy way to get started with contributions!</p>
+<p><a href="https://github.com/codespaces/new?hide_repo_select=true&amp;ref=main&amp;repo=409325108"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces"></a></p>
+<h3 id="get-involved">Get involved</h3>
+<ul>
+<li><a href="https://discord.gg/jubxF84yGw">Join the Discord chat</a></li>
+<li><a href="https://intel.github.io/rohd-website/forum/rohd-forum/">Attend the ROHD Forum meetings</a></li>
+<li><a href="https://github.com/intel/rohd/discussions">GitHub Discussions</a></li>
+</ul>
+<h2 id="about-rohd">About ROHD</h2>
+<ul>
+<li>Full power of the modern <strong>Dart language</strong> for hardware design and verification</li>
+<li>Makes <strong>validation collateral</strong> simpler to develop and debug.  The <a href="https://github.com/intel/rohd-vf">ROHD Verification Framework</a> helps build well-structured testbenches.</li>
+<li>Develop <strong>layers of abstraction</strong> within a hardware design, making it more flexible and powerful</li>
+<li>Easy <strong>IP integration</strong> and <strong>interfaces</strong>; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration</li>
+<li><strong>Simple and fast build</strong>, free of complex build systems and EDA vendor tools</li>
+<li>Can use the excellent pub.dev <strong>package manager</strong> and all the packages it has to offer</li>
+<li>Built-in event-based <strong>fast simulator</strong> with <strong>4-value</strong> (0, 1, X, and Z) support and a <strong>waveform dumper</strong> to .vcd file format</li>
+<li>Conversion of modules to equivalent, human-readable, structurally similar <strong>SystemVerilog</strong> for integration or downstream tool consumption</li>
+<li><strong>Run-time dynamic</strong> module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents</li>
+<li>Leverage the <a href="https://github.com/intel/rohd-hcl">ROHD Hardware Component Library (ROHD-HCL)</a> with reusable and configurable design and verification components.</li>
+<li>Simple, free, <strong>open source tool stack</strong> without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.</li>
+<li>Excellent, simple, fast <strong>unit-testing</strong> framework</li>
+<li><strong>Less verbose</strong> than alternatives (fewer lines of code)</li>
+<li>Enables <strong>higher quality</strong> development</li>
+<li>Replaces hacky perl/python scripting for automation with powerful <strong>native control of design generation</strong></li>
+<li>Fewer bugs and lines of code means <strong>shorter development schedule</strong></li>
+<li>Support for <strong>cosimulation with verilog modules</strong> (via <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a>) and <strong>instantiation of verilog modules</strong> in generated SystemVerilog code</li>
+<li>Use <strong>modern IDEs</strong> like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more</li>
+<li>Simulate with <strong>various abstraction levels of models</strong> from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment.</li>
+</ul>
+<p>ROHD is <em>not</em> a new language, it is <em>not</em> a hardware description language (HDL), and it is <em>not</em> a version of High-Level Synthesis (HLS).  ROHD can be classified as a generator framework.</p>
+<p>You can think of this project as an attempt to <em>replace</em> SystemVerilog and related build systems as the front-end methodology of choice in the industry.</p>
+<p>One of ROHD's goals is to help grow an open-source community around reusable hardware designs and verification components.</p>
+<h2 id="contributing">Contributing</h2>
+<p>ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see <a href="https://github.com/intel/rohd/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
+<hr>
+<p>Copyright (C) 2021-2024 Intel Corporation<br>
+SPDX-License-Identifier: BSD-3-Clause</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="rohd">
+  <span class="name"><a href="rohd/rohd-library.html">rohd</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://intel.github.io/rohd-website">rohd package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">rohd</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="rohd/rohd-library.html">rohd</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.5.3
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
