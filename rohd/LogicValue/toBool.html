@@ -57,7 +57,7 @@
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.6.1/dart-core/bool-class.html">bool</a></span>
 <span class="name ">toBool</span>(<wbr>)
 
       
@@ -66,7 +66,7 @@
     
 <section class="desc markdown">
   <p>Converts a valid logical value to a boolean.</p>
-<p>Throws an exception if the value is invalid.</p>
+<p>Throws a LogicValueConversionException if the value is invalid.</p>
 </section>
 
 
@@ -75,10 +75,12 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool toBool() {
   if (!isValid) {
-    throw Exception(&#39;Cannot convert value &quot;$this&quot; to bool&#39;);
+    throw LogicValueConversionException(
+        &#39;Cannot convert value &quot;$this&quot; to bool&#39;);
   }
   if (width != 1) {
-    throw Exception(&#39;Only single bit values can be converted to a bool,&#39;
+    throw LogicValueConversionException(
+        &#39;Only single bit values can be converted to a bool,&#39;
         &#39; but found width $width in $this&#39;);
   }
   return this == LogicValue.one;
@@ -110,7 +112,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.5.3
+      0.6.0
   </span>
   
 </footer>
