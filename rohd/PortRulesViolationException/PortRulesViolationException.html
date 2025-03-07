@@ -58,13 +58,13 @@
     <section class="multi-line-signature">
       
       <span class="name ">PortRulesViolationException</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="-param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
-<li><span class="parameter" id="-param-signal"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">signal</span>, [</span></li>
-<li><span class="parameter" id="-param-additionalMessage"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">additionalMessage</span> = <span class="default-value">&#39;&#39;</span></span></li>
+<li><span class="parameter" id="-param-signal"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">signal</span>, [</span></li>
+<li><span class="parameter" id="-param-additionalMessage"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">additionalMessage</span> = <span class="default-value">&#39;&#39;</span></span></li>
 </ol>])
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a new <a href="https://api.dart.dev/stable/3.6.1/dart-core/Exception-class.html">Exception</a> for when port rules are not present on
+  <p>Constructs a new <a href="https://api.dart.dev/stable/3.6.2/dart-core/Exception-class.html">Exception</a> for when port rules are not present on
 <code>module</code> for <code>signal</code>.</p>
 </section>
 
@@ -72,11 +72,13 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">PortRulesViolationException(Module module, String signal,
+  <pre class="language-dart"><code class="language-dart">PortRulesViolationException(this.module, String signal,
     [String additionalMessage = &#39;&#39;])
-    : super(&#39;Violation of input&#47;output rules in $module on $signal.&#39;
-          &#39; Logic within a Module should only consume inputs&#47;inouts and&#39;
-          &#39; drive outputs&#47;inouts of that Module.&#39;
+    : super(&#39;Violation of input&#47;output rules&#39;
+          &#39; in module $module on signal $signal.&#39;
+          &#39; Logic within a Module should only communicate outside of itself&#39;
+          &#39; by consuming inputs&#47;inouts and&#39;
+          &#39; driving outputs&#47;inouts of that itself.&#39;
           &#39; See https:&#47;&#47;intel.github.io&#47;rohd-website&#47;docs&#47;modules&#47;&#39;
           &#39; for more information. $additionalMessage&#39;);</code></pre>
 </section>
@@ -106,7 +108,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.0
+      0.6.3
   </span>
   
 </footer>

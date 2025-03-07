@@ -57,7 +57,7 @@
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="https://api.dart.dev/stable/3.6.1/dart-core/bool-class.html">bool</a></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span>
 <span class="name ">isInOut</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="isInOut-param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span></li>
 </ol>)
 
@@ -68,6 +68,8 @@
 <section class="desc markdown">
   <p>Returns true iff <code>signal</code> is the same <a href="../../rohd/Logic-class.html">Logic</a> as the <a href="../../rohd/Module/inOut.html">inOut</a> port of this
 <a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
+<p>Note that if signal is a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> which contains an <a href="../../rohd/Module/inOut.html">inOut</a> port,
+but is not itself a port, this will return false.</p>
 </section>
 
 
@@ -104,7 +106,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.0
+      0.6.3
   </span>
   
 </footer>

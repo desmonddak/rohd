@@ -57,7 +57,7 @@
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="https://api.dart.dev/stable/3.6.1/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
 <span class="name ">reset</span>(<wbr>)
 
       
@@ -80,8 +80,6 @@
 
   _currentTimestamp = 0;
   _simulationEndRequested = false;
-
-  _simExceptions = [];
 
   _maxSimTime = -1;
   if (!_preTickController.isClosed) {
@@ -107,6 +105,9 @@
   _pendingTimestamps.clear();
   _phase = SimulatorPhase.outOfTick;
   _injectedActions.clear();
+  _endOfSimulationActions.clear();
+  _simExceptions.clear();
+  _pendingList = ListQueue();
 
   &#47;&#47; make sure we&#39;ve already passed the new completer so that listeners can
   &#47;&#47; get the latest
@@ -142,7 +143,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.0
+      0.6.3
   </span>
   
 </footer>
