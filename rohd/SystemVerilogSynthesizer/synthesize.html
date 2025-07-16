@@ -91,9 +91,9 @@ SynthesisResult synthesize(
 
   return module is SystemVerilog &amp;&amp;
           module.generatedDefinitionType == DefinitionGenerationType.custom
-      ? _SystemVerilogCustomDefinitionSynthesisResult(
+      ? SystemVerilogCustomDefinitionSynthesisResult(
           module, getInstanceTypeOfModule)
-      : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+      : SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
 }</code></pre>
 </section>
 
@@ -122,7 +122,7 @@ SynthesisResult synthesize(
 <footer>
   <span class="no-break">
     rohd
-      0.6.3
+      0.6.5
   </span>
   
 </footer>
