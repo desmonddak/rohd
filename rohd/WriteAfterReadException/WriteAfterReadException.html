@@ -65,12 +65,7 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">WriteAfterReadException()
-    : super(&#39;Signal changed its value after being used&#39;
-          &#39; within one `Combinational` execution.&#39;
-          &#39; This can lead to a mismatch between simulation and synthesis.&#39;
-          &#39; You may be able to use `Combinational.ssa` to correct your&#39;
-          &#39; design with minimal refactoring.&#39;);</code></pre>
+  <pre class="language-dart"><code class="language-dart">WriteAfterReadException() : this._();</code></pre>
 </section>
 
 
@@ -98,7 +93,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.6
+      0.6.7
   </span>
   
 </footer>
