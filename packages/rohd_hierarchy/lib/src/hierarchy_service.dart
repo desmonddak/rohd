@@ -14,45 +14,46 @@ const String _hierarchySeparator = '/';
 
 /// A source-agnostic interface for navigating hardware hierarchy.
 ///
-/// All search and navigation is driven by walking the [HierarchyNode] tree.
-/// Nodes hold their [HierarchyNode.name], [HierarchyNode.children], and
-/// [HierarchyNode.signals].  Full paths are constructed on the fly by
-/// joining names with [_hierarchySeparator] — no pre-baked path strings
-/// are needed for search.
+/// All search and navigation is driven by walking the [HierarchyOccurrence]
+/// tree. Occurrences hold their [HierarchyOccurrence.name],
+/// [HierarchyOccurrence.children], and [HierarchyOccurrence.signals].  Full
+/// paths are constructed on the fly by joining names with [_hierarchySeparator]
+/// — no pre-baked path strings are needed for search.
 ///
 /// Key methods:
 /// - [searchSignals] — incremental signal search
-/// - [searchModules] — find modules/instances by name
-/// - [searchNodes] — find modules/instances, returning [HierarchyNode] objects
+/// - [searchOccurrences] — find occurrences by name
+/// - [matchOccurrences] — find occurrences, returning [HierarchyOccurrence]
+///   objects
 /// - [autocompletePaths] — incremental path completion
 abstract mixin class HierarchyService {
-  /// The root node for the hierarchy.
-  HierarchyNode get root;
+  /// The root occurrence for the hierarchy.
+  HierarchyOccurrence get root;
 
   /// Maximum number of results returned by search methods when no explicit
   /// `limit` is provided.
   static const int _defaultSearchLimit = 100;
 
-  // ───────────── Address-based node/signal lookup ──────────────────
+  // ───────────── Address-based occurrence/signal lookup ────────────────
 
-  /// Find a node by its [HierarchyAddress].  O(depth).
-  HierarchyNode? nodeByAddress(HierarchyAddress address) =>
-      address.path.fold<HierarchyNode?>(
+  /// Find an occurrence by its [OccurrenceAddress].  O(depth).
+  HierarchyOccurrence? occurrenceByAddress(OccurrenceAddress address) =>
+      address.path.fold<HierarchyOccurrence?>(
           root,
           (node, idx) => node != null && idx >= 0 && idx < node.children.length
               ? node.children[idx]
               : null);
 
-  /// Find a signal by its [HierarchyAddress].
+  /// Find a signal by its [OccurrenceAddress].
   ///
-  /// The parent portion of [address] navigates to the owning module;
-  /// the last index selects the signal within that module.  O(depth).
-  Signal? signalByAddress(HierarchyAddress address) {
+  /// The parent portion of [address] navigates to the owning occurrence;
+  /// the last index selects the signal within that occurrence.  O(depth).
+  SignalOccurrence? signalByAddress(OccurrenceAddress address) {
     if (address.path.isEmpty) {
       return null;
     }
-    final node = nodeByAddress(
-        HierarchyAddress(address.path.sublist(0, address.path.length - 1)));
+    final node = occurrenceByAddress(
+        OccurrenceAddress(address.path.sublist(0, address.path.length - 1)));
     final sigIdx = address.path.last;
     return (node != null && sigIdx >= 0 && sigIdx < node.signals.length)
         ? node.signals[sigIdx]
@@ -62,34 +63,37 @@ abstract mixin class HierarchyService {
   // ───────────── Address ↔ pathname conversion ──────────────────
 
   /// Convert a pathname (e.g. `"Top/sub/clk"` or `"Top.sub.clk"`) to a
-  /// [HierarchyAddress] by walking the tree.
+  /// [OccurrenceAddress] by walking the tree.
   ///
-  /// Delegates to [HierarchyAddress.tryFromPathname].
-  HierarchyAddress? pathnameToAddress(String pathname) =>
-      HierarchyAddress.tryFromPathname(pathname, root);
+  /// Delegates to [OccurrenceAddress.tryFromPathname].
+  OccurrenceAddress? pathnameToAddress(String pathname) =>
+      OccurrenceAddress.tryFromPathname(pathname, root);
 
-  /// Resolve a `/`-separated pathname to a [HierarchyNode].
+  /// Resolve a `/`-separated pathname to a [HierarchyOccurrence].
   ///
-  /// Convenience that composes [pathnameToAddress] and [nodeByAddress].
-  /// Returns `null` when [pathname] does not match any node in the tree.
-  HierarchyNode? nodeByPathname(String pathname) {
+  /// Convenience that composes [pathnameToAddress] and [occurrenceByAddress].
+  /// Returns `null` when [pathname] does not match any occurrence in the
+  /// tree.
+  HierarchyOccurrence? occurrenceByPathname(String pathname) {
     final addr = pathnameToAddress(pathname);
-    return addr == null ? null : nodeByAddress(addr);
+    return addr == null ? null : occurrenceByAddress(addr);
   }
 
-  /// Convert a [HierarchyAddress] back to a `/`-separated pathname by
+  /// Convert a [OccurrenceAddress] back to a `/`-separated pathname by
   /// walking the tree using child indices.
   ///
   /// Returns `null` if the address doesn't resolve in the current tree
   /// (e.g. out-of-bounds indices).  O(depth).
   ///
   /// For signal addresses, the last index is resolved as a signal within
-  /// the parent module.  For pure module addresses, every index is a child.
+  /// the parent occurrence.  For pure occurrence addresses, every index
+  /// is a child.
   ///
   /// Set [asSignal] to `true` when you know the address points to a signal
   /// (the last index is a signal offset rather than a child offset).
   /// When `false` (default), all indices are treated as child offsets.
-  String? addressToPathname(HierarchyAddress address, {bool asSignal = false}) {
+  String? addressToPathname(OccurrenceAddress address,
+      {bool asSignal = false}) {
     if (address.path.isEmpty) {
       return root.name;
     }
@@ -99,7 +103,7 @@ abstract mixin class HierarchyService {
 
     final walked = indices
         .sublist(0, moduleEndIdx)
-        .fold<({List<String> parts, HierarchyNode node})?>((
+        .fold<({List<String> parts, HierarchyOccurrence node})?>((
       parts: [root.name],
       node: root,
     ), (cur, idx) {
@@ -124,10 +128,10 @@ abstract mixin class HierarchyService {
   }
 
   /// Resolve a waveform-style ID (dot-separated, e.g. `"dut.adder.clk"`)
-  /// to a [HierarchyAddress].
+  /// to a [OccurrenceAddress].
   ///
   /// Normalises `.` → `/` then delegates to [pathnameToAddress].
-  HierarchyAddress? waveformIdToAddress(String waveformId) =>
+  OccurrenceAddress? waveformIdToAddress(String waveformId) =>
       pathnameToAddress(waveformId);
 
   // ───────────────────── Search / autocomplete ─────────────────────
@@ -161,18 +165,19 @@ abstract mixin class HierarchyService {
       query.contains('|') ||
       query.contains('+');
 
-  /// Check if a [node] or any of its descendants match [searchTerm].
+  /// Check if an occurrence or any of its descendants match [searchTerm].
   ///
   /// The search term is split on `/` or `.` into hierarchical segments.
   /// Each segment is matched case-insensitively via substring containment
-  /// against node names at successive depths.
+  /// against occurrence names at successive depths.
   ///
-  /// Returns `true` if [searchTerm] is null/empty, or if the node (or a
-  /// descendant) matches all segments in order.
+  /// Returns `true` if [searchTerm] is null/empty, or if the occurrence
+  /// (or a descendant) matches all segments in order.
   ///
-  /// This is useful for tree-view filtering: show a node only when it or
-  /// one of its descendants matches the user's query.
-  static bool isNodeMatching(HierarchyNode node, String? searchTerm) {
+  /// This is useful for tree-view filtering: show an occurrence only when
+  /// it or one of its descendants matches the user's query.
+  static bool isOccurrenceMatching(
+      HierarchyOccurrence node, String? searchTerm) {
     if (searchTerm == null || searchTerm.isEmpty) {
       return true;
     }
@@ -185,11 +190,11 @@ abstract mixin class HierarchyService {
         .where((s) => s.isNotEmpty)
         .toList();
 
-    return _isNodeMatchingRecursive(node, queryParts, 0);
+    return _isOccurrenceMatchingRecursive(node, queryParts, 0);
   }
 
-  static bool _isNodeMatchingRecursive(
-      HierarchyNode node, List<String> queryParts, int queryIdx) {
+  static bool _isOccurrenceMatchingRecursive(
+      HierarchyOccurrence node, List<String> queryParts, int queryIdx) {
     if (queryIdx >= queryParts.length) {
       return true;
     }
@@ -204,8 +209,8 @@ abstract mixin class HierarchyService {
       return true;
     }
 
-    return node.children.any(
-        (child) => _isNodeMatchingRecursive(child, queryParts, nextQueryIdx));
+    return node.children.any((child) =>
+        _isOccurrenceMatchingRecursive(child, queryParts, nextQueryIdx));
   }
 
   /// Search for signals and return enriched [SignalSearchResult] objects.
@@ -224,38 +229,38 @@ abstract mixin class HierarchyService {
     return _toSignalResults(searchSignalPaths(query, limit: effectiveLimit));
   }
 
-  /// Find hierarchical module/node paths matching [query].
+  /// Find hierarchical occurrence paths matching [query].
   ///
-  /// Similar to [searchSignalPaths] but for modules/instances instead of
+  /// Similar to [searchSignalPaths] but for occurrences instead of
   /// signals. Walks the tree, matching name segments incrementally. When
-  /// the query segments match module names at or below the current node
-  /// the full path is returned (e.g. `Top/CPU/ALU`).
+  /// the query segments match occurrence names at or below the current
+  /// level the full path is returned (e.g. `Top/CPU/ALU`).
   ///
   /// Returns up to [limit] results.
-  List<String> searchNodePaths(String query, {int? limit}) {
+  List<String> searchOccurrencePaths(String query, {int? limit}) {
     final effectiveLimit = limit ?? _defaultSearchLimit;
     if (query.trim().isEmpty) {
       return const [];
     }
     final parts = _splitPath(query);
     final results = <String>[];
-    _searchNodePathsRecursive(
+    _searchOccurrencePathsRecursive(
         root, [root.name], parts, 0, results, effectiveLimit);
     return results;
   }
 
-  /// Find hierarchy nodes whose path matches [query].
+  /// Find hierarchy occurrences whose path matches [query].
   ///
-  /// Like [searchNodePaths] but returns the [HierarchyNode] objects
+  /// Like [searchOccurrencePaths] but returns the [HierarchyOccurrence] objects
   /// themselves instead of path strings.
-  List<HierarchyNode> searchNodes(String query, {int? limit}) {
+  List<HierarchyOccurrence> matchOccurrences(String query, {int? limit}) {
     final effectiveLimit = limit ?? _defaultSearchLimit;
     if (query.trim().isEmpty) {
       return const [];
     }
     final parts = _splitPath(query);
-    final results = <HierarchyNode>[];
-    _searchNodesRecursive(root, parts, 0, results, effectiveLimit);
+    final results = <HierarchyOccurrence>[];
+    _matchOccurrencesRecursive(root, parts, 0, results, effectiveLimit);
     return results;
   }
 
@@ -326,20 +331,22 @@ abstract mixin class HierarchyService {
     return suggestions;
   }
 
-  /// Search for modules/nodes and return enriched [ModuleSearchResult] objects.
+  /// Search for occurrences and return enriched
+  /// [OccurrenceSearchResult] objects.
   ///
-  /// Automatically dispatches to [searchModulesRegex] when the query
+  /// Automatically dispatches to [searchOccurrencesRegex] when the query
   /// contains glob or regex metacharacters (`*`, `?`, `[`, `(`, `|`,
-  /// `+`).  Otherwise uses [searchNodePaths] for prefix-based matching.
-  List<ModuleSearchResult> searchModules(String query, {int? limit}) {
+  /// `+`).  Otherwise uses [searchOccurrencePaths] for prefix-based matching.
+  List<OccurrenceSearchResult> searchOccurrences(String query, {int? limit}) {
     final effectiveLimit = limit ?? _defaultSearchLimit;
     if (hasRegexChars(query)) {
       final pattern = (query.startsWith('**/') || query.startsWith('*/'))
           ? query
           : '**/$query';
-      return searchModulesRegex(pattern, limit: effectiveLimit);
+      return searchOccurrencesRegex(pattern, limit: effectiveLimit);
     }
-    return _toModuleResults(searchNodePaths(query, limit: effectiveLimit));
+    return _toOccurrenceResults(
+        searchOccurrencePaths(query, limit: effectiveLimit));
   }
 
   // ───────────────── Regex search ─────────────────
@@ -386,13 +393,13 @@ abstract mixin class HierarchyService {
   List<SignalSearchResult> searchSignalsRegex(String pattern, {int? limit}) =>
       _toSignalResults(searchSignalPathsRegex(pattern, limit: limit));
 
-  /// Search for module/node paths matching a regex [pattern].
+  /// Search for occurrence paths matching a regex [pattern].
   ///
-  /// Same segment syntax as [searchSignalPathsRegex] but matches module
-  /// nodes instead of signals.
+  /// Same segment syntax as [searchSignalPathsRegex] but matches
+  /// occurrences instead of signals.
   ///
-  /// Returns up to [limit] full hierarchical module paths.
-  List<String> searchNodePathsRegex(String pattern, {int? limit}) {
+  /// Returns up to [limit] full hierarchical occurrence paths.
+  List<String> searchOccurrencePathsRegex(String pattern, {int? limit}) {
     final effectiveLimit = limit ?? _defaultSearchLimit;
     if (pattern.trim().isEmpty) {
       return const [];
@@ -400,13 +407,15 @@ abstract mixin class HierarchyService {
     final segments = _splitRegexPattern(pattern);
     final compiled = _compileSegments(segments);
     final results = <String>[];
-    _searchNodesRegex(root, [root.name], compiled, 0, results, effectiveLimit);
+    _matchOccurrencesRegex(
+        root, [root.name], compiled, 0, results, effectiveLimit);
     return results;
   }
 
-  /// Search for modules by regex pattern and return enriched results.
-  List<ModuleSearchResult> searchModulesRegex(String pattern, {int? limit}) =>
-      _toModuleResults(searchNodePathsRegex(pattern, limit: limit));
+  /// Search for occurrences by regex pattern and return enriched results.
+  List<OccurrenceSearchResult> searchOccurrencesRegex(String pattern,
+          {int? limit}) =>
+      _toOccurrenceResults(searchOccurrencePathsRegex(pattern, limit: limit));
 
   // ─────────────────── Utility helpers ───────────────────
 
@@ -455,7 +464,7 @@ abstract mixin class HierarchyService {
   /// Enrich signal paths into [SignalSearchResult] objects.
   List<SignalSearchResult> _toSignalResults(List<String> paths) =>
       paths.map((fullPath) {
-        final addr = HierarchyAddress.tryFromPathname(fullPath, root);
+        final addr = OccurrenceAddress.tryFromPathname(fullPath, root);
         return SignalSearchResult(
           signalId: fullPath,
           path: _splitPathPreserveCase(fullPath),
@@ -463,27 +472,27 @@ abstract mixin class HierarchyService {
         );
       }).toList();
 
-  /// Enrich module paths into [ModuleSearchResult] objects.
-  List<ModuleSearchResult> _toModuleResults(List<String> paths) =>
+  /// Enrich occurrence paths into [OccurrenceSearchResult] objects.
+  List<OccurrenceSearchResult> _toOccurrenceResults(List<String> paths) =>
       paths.map((fullPath) {
-        final addr = HierarchyAddress.tryFromPathname(fullPath, root);
-        return ModuleSearchResult(
-          moduleId: fullPath,
+        final addr = OccurrenceAddress.tryFromPathname(fullPath, root);
+        return OccurrenceSearchResult(
+          occurrenceId: fullPath,
           path: _splitPathPreserveCase(fullPath),
-          node: (addr != null ? nodeByAddress(addr) : null) ?? root,
+          occurrence: (addr != null ? occurrenceByAddress(addr) : null) ?? root,
         );
       }).toList();
 
   /// Recursively search for signals matching query parts.
   ///
-  /// Walks the tree maintaining the path of names.  When the accumulated
-  /// match depth reaches the query length, checks signals at that node.
-  /// Partial last-segment matching also checks signals at partially-matched
-  /// nodes.
+  /// Walks the tree maintaining the path of names.  When the accumulated match
+  /// depth reaches the query length, checks signals at that node. Partial
+  /// last-segment matching also checks signals at partially-matched nodes.
   ///
-  /// Uses [HierarchyNode.children] and [HierarchyNode.signals] directly.
+  /// Uses [HierarchyOccurrence.children] and [HierarchyOccurrence.signals]
+  /// directly.
   void _searchSignalsRecursive(
-    HierarchyNode node,
+    HierarchyOccurrence node,
     List<String> pathSoFar,
     List<String> queryParts,
     int qIdx,
@@ -542,13 +551,13 @@ abstract mixin class HierarchyService {
     }
   }
 
-  /// Recursively search for module nodes matching query parts.
+  /// Recursively search for occurrences matching query parts.
   ///
-  /// Similar to [_searchSignalsRecursive] but matches module nodes instead
+  /// Similar to [_searchSignalsRecursive] but matches occurrences instead
   /// of signals. Walks the tree maintaining the path of names. When the
-  /// query segments match module names, adds them to results.
-  void _searchNodePathsRecursive(
-    HierarchyNode node,
+  /// query segments match occurrence names, adds them to results.
+  void _searchOccurrencePathsRecursive(
+    HierarchyOccurrence node,
     List<String> pathSoFar,
     List<String> queryParts,
     int qIdx,
@@ -579,7 +588,7 @@ abstract mixin class HierarchyService {
       if (results.length >= limit) {
         return;
       }
-      _searchNodePathsRecursive(
+      _searchOccurrencePathsRecursive(
         child,
         [...pathSoFar, child.name],
         queryParts,
@@ -590,9 +599,14 @@ abstract mixin class HierarchyService {
     }
   }
 
-  /// Recursively search for nodes matching query parts, returning the nodes.
-  void _searchNodesRecursive(HierarchyNode node, List<String> queryParts,
-      int qIdx, List<HierarchyNode> results, int limit) {
+  /// Recursively search for occurrences matching query parts, returning
+  /// the occurrences.
+  void _matchOccurrencesRecursive(
+      HierarchyOccurrence node,
+      List<String> queryParts,
+      int qIdx,
+      List<HierarchyOccurrence> results,
+      int limit) {
     if (results.length >= limit) {
       return;
     }
@@ -609,7 +623,7 @@ abstract mixin class HierarchyService {
     }
 
     for (final child in node.children) {
-      _searchNodesRecursive(child, queryParts, nextIdx, results, limit);
+      _matchOccurrencesRecursive(child, queryParts, nextIdx, results, limit);
       if (results.length >= limit) {
         return;
       }
@@ -681,7 +695,7 @@ abstract mixin class HierarchyService {
   /// [segIdx] is the index into [segments] that we are currently trying to
   /// match at this tree depth.
   void _searchSignalsRegex(
-    HierarchyNode node,
+    HierarchyOccurrence node,
     List<String> pathSoFar,
     List<_RegexSegment> segments,
     int segIdx,
@@ -751,9 +765,9 @@ abstract mixin class HierarchyService {
     }
   }
 
-  /// Recursive module/node search driven by compiled regex segments.
-  void _searchNodesRegex(
-    HierarchyNode node,
+  /// Recursive occurrence search driven by compiled regex segments.
+  void _matchOccurrencesRegex(
+    HierarchyOccurrence node,
     List<String> pathSoFar,
     List<_RegexSegment> segments,
     int segIdx,
@@ -784,7 +798,7 @@ abstract mixin class HierarchyService {
         if (results.length >= limit) {
           return;
         }
-        _searchNodesRegex(
+        _matchOccurrencesRegex(
           child,
           [...pathSoFar, child.name],
           segments,

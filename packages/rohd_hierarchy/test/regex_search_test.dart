@@ -29,140 +29,88 @@ void main() {
       //     UART       signals: [clk, tx, rx]
       //   signals (Top): [clk, reset]
 
-      final alu = HierarchyNode(
-        id: 'Top.CPU.ALU',
+      final alu = HierarchyOccurrence(
         name: 'ALU',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(type: 'wire', id: 'Top.CPU.ALU.a', name: 'a', width: 8),
-          Signal(type: 'wire', id: 'Top.CPU.ALU.b', name: 'b', width: 8),
-          Signal(
-              type: 'wire', id: 'Top.CPU.ALU.result', name: 'result', width: 8),
-          Signal(
-              type: 'wire',
-              id: 'Top.CPU.ALU.carry_out',
-              name: 'carry_out',
-              width: 1),
+          SignalOccurrence(name: 'a', width: 8),
+          SignalOccurrence(name: 'b', width: 8),
+          SignalOccurrence(name: 'result', width: 8),
+          SignalOccurrence(name: 'carry_out', width: 1),
         ],
       );
 
-      final decoder = HierarchyNode(
-        id: 'Top.CPU.Decoder',
+      final decoder = HierarchyOccurrence(
         name: 'Decoder',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              type: 'wire',
-              id: 'Top.CPU.Decoder.opcode',
-              name: 'opcode',
-              width: 4),
-          Signal(
-              type: 'wire',
-              id: 'Top.CPU.Decoder.enable',
-              name: 'enable',
-              width: 1),
+          SignalOccurrence(name: 'opcode', width: 4),
+          SignalOccurrence(name: 'enable', width: 1),
         ],
       );
 
-      final regFile = HierarchyNode(
-        id: 'Top.CPU.RegFile',
+      final regFile = HierarchyOccurrence(
         name: 'RegFile',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              type: 'wire', id: 'Top.CPU.RegFile.clk', name: 'clk', width: 1),
-          Signal(
-              type: 'wire',
-              id: 'Top.CPU.RegFile.reset',
-              name: 'reset',
-              width: 1),
-          Signal(type: 'wire', id: 'Top.CPU.RegFile.d0', name: 'd0', width: 8),
-          Signal(type: 'wire', id: 'Top.CPU.RegFile.d1', name: 'd1', width: 8),
-          Signal(type: 'wire', id: 'Top.CPU.RegFile.d2', name: 'd2', width: 8),
-          Signal(
-              type: 'wire', id: 'Top.CPU.RegFile.d15', name: 'd15', width: 8),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'reset', width: 1),
+          SignalOccurrence(name: 'd0', width: 8),
+          SignalOccurrence(name: 'd1', width: 8),
+          SignalOccurrence(name: 'd2', width: 8),
+          SignalOccurrence(name: 'd15', width: 8),
         ],
       );
 
-      final cpu = HierarchyNode(
-        id: 'Top.CPU',
+      final cpu = HierarchyOccurrence(
         name: 'CPU',
-        kind: HierarchyKind.module,
         children: [alu, decoder, regFile],
       );
 
-      final cache = HierarchyNode(
-        id: 'Top.Memory.Cache',
+      final cache = HierarchyOccurrence(
         name: 'Cache',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              type: 'wire', id: 'Top.Memory.Cache.clk', name: 'clk', width: 1),
-          Signal(
-              type: 'wire',
-              id: 'Top.Memory.Cache.addr',
-              name: 'addr',
-              width: 16),
-          Signal(
-              type: 'wire',
-              id: 'Top.Memory.Cache.data',
-              name: 'data',
-              width: 32),
-          Signal(
-              type: 'wire', id: 'Top.Memory.Cache.hit', name: 'hit', width: 1),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'addr', width: 16),
+          SignalOccurrence(name: 'data', width: 32),
+          SignalOccurrence(name: 'hit', width: 1),
         ],
       );
 
-      final dram = HierarchyNode(
-        id: 'Top.Memory.DRAM',
+      final dram = HierarchyOccurrence(
         name: 'DRAM',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              type: 'wire', id: 'Top.Memory.DRAM.clk', name: 'clk', width: 1),
-          Signal(
-              type: 'wire', id: 'Top.Memory.DRAM.cas', name: 'cas', width: 1),
-          Signal(
-              type: 'wire', id: 'Top.Memory.DRAM.ras', name: 'ras', width: 1),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'cas', width: 1),
+          SignalOccurrence(name: 'ras', width: 1),
         ],
       );
 
-      final memory = HierarchyNode(
-        id: 'Top.Memory',
+      final memory = HierarchyOccurrence(
         name: 'Memory',
-        kind: HierarchyKind.module,
         children: [cache, dram],
       );
 
-      final uart = HierarchyNode(
-        id: 'Top.IO.UART',
+      final uart = HierarchyOccurrence(
         name: 'UART',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(type: 'wire', id: 'Top.IO.UART.clk', name: 'clk', width: 1),
-          Signal(type: 'wire', id: 'Top.IO.UART.tx', name: 'tx', width: 1),
-          Signal(type: 'wire', id: 'Top.IO.UART.rx', name: 'rx', width: 1),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'tx', width: 1),
+          SignalOccurrence(name: 'rx', width: 1),
         ],
       );
 
-      final io = HierarchyNode(
-        id: 'Top.IO',
+      final io = HierarchyOccurrence(
         name: 'IO',
-        kind: HierarchyKind.module,
         children: [uart],
       );
 
-      final root = HierarchyNode(
-        id: 'Top',
+      final root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [cpu, memory, io],
         signals: [
-          Signal(type: 'wire', id: 'Top.clk', name: 'clk', width: 1),
-          Signal(type: 'wire', id: 'Top.reset', name: 'reset', width: 1),
-          Signal(type: 'wire', id: 'Top.data_m', name: 'data_m', width: 8),
-          Signal(type: 'wire', id: 'Top.addr_m', name: 'addr_m', width: 16),
-          Signal(type: 'wire', id: 'Top.flag_m', name: 'flag_m', width: 1),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'reset', width: 1),
+          SignalOccurrence(name: 'data_m', width: 8),
+          SignalOccurrence(name: 'addr_m', width: 16),
+          SignalOccurrence(name: 'flag_m', width: 1),
         ],
       );
 
@@ -322,8 +270,8 @@ void main() {
 
     // ── Module search ──
 
-    test('searchNodePathsRegex finds modules', () {
-      final results = hierarchy.searchNodePathsRegex('Top/CPU/.*');
+    test('searchOccurrencePathsRegex finds modules', () {
+      final results = hierarchy.searchOccurrencePathsRegex('Top/CPU/.*');
       expect(
           results,
           containsAll([
@@ -333,8 +281,8 @@ void main() {
           ]));
     });
 
-    test('searchNodePathsRegex with **', () {
-      final results = hierarchy.searchNodePathsRegex('Top/**/DRAM');
+    test('searchOccurrencePathsRegex with **', () {
+      final results = hierarchy.searchOccurrencePathsRegex('Top/**/DRAM');
       expect(results, contains('Top/Memory/DRAM'));
     });
 
@@ -350,7 +298,8 @@ void main() {
       expect(results.first.signal!.name, 'result');
     });
 
-    test('searchSignalsRegex returns results with Signal objects', () {
+    test('searchSignalsRegex returns results with SignalOccurrence objects',
+        () {
       final results = hierarchy.searchSignalsRegex('Top/**/carry_out');
       expect(results.length, 1);
       expect(results.first.signal, isNotNull);
@@ -358,10 +307,10 @@ void main() {
       expect(results.first.signal!.width, 1);
     });
 
-    test('searchModulesRegex returns ModuleSearchResult objects', () {
-      final results = hierarchy.searchModulesRegex('Top/**/Cache');
+    test('searchOccurrencesRegex returns OccurrenceSearchResult objects', () {
+      final results = hierarchy.searchOccurrencesRegex('Top/**/Cache');
       expect(results.length, 1);
-      expect(results.first.moduleId, 'Top/Memory/Cache');
+      expect(results.first.occurrenceId, 'Top/Memory/Cache');
     });
 
     // ── Limit ──
@@ -442,7 +391,7 @@ void main() {
 
     test('empty pattern returns nothing', () {
       expect(hierarchy.searchSignalPathsRegex(''), isEmpty);
-      expect(hierarchy.searchNodePathsRegex(''), isEmpty);
+      expect(hierarchy.searchOccurrencePathsRegex(''), isEmpty);
     });
 
     test('non-matching pattern returns nothing', () {
@@ -481,7 +430,7 @@ void main() {
     });
   });
 
-  group('searchModules dispatches to regex', () {
+  group('searchOccurrences dispatches to regex', () {
     late HierarchyService hierarchy;
 
     setUpAll(() {
@@ -497,125 +446,106 @@ void main() {
       //   IO
       //     UART
 
-      final alu = HierarchyNode(
-        id: 'Top/CPU/ALU',
+      final alu = HierarchyOccurrence(
         name: 'ALU',
-        kind: HierarchyKind.module,
       );
 
-      final decoder = HierarchyNode(
-        id: 'Top/CPU/Decoder',
+      final decoder = HierarchyOccurrence(
         name: 'Decoder',
-        kind: HierarchyKind.module,
       );
 
-      final muxUnit = HierarchyNode(
-        id: 'Top/CPU/MuxUnit',
+      final muxUnit = HierarchyOccurrence(
         name: 'MuxUnit',
-        kind: HierarchyKind.module,
       );
 
-      final cpu = HierarchyNode(
-        id: 'Top/CPU',
+      final cpu = HierarchyOccurrence(
         name: 'CPU',
-        kind: HierarchyKind.module,
         children: [alu, decoder, muxUnit],
       );
 
-      final cache = HierarchyNode(
-        id: 'Top/Memory/Cache',
+      final cache = HierarchyOccurrence(
         name: 'Cache',
-        kind: HierarchyKind.module,
       );
 
-      final dram = HierarchyNode(
-        id: 'Top/Memory/DRAM',
+      final dram = HierarchyOccurrence(
         name: 'DRAM',
-        kind: HierarchyKind.module,
       );
 
-      final memory = HierarchyNode(
-        id: 'Top/Memory',
+      final memory = HierarchyOccurrence(
         name: 'Memory',
-        kind: HierarchyKind.module,
         children: [cache, dram],
       );
 
-      final uart = HierarchyNode(
-        id: 'Top/IO/UART',
+      final uart = HierarchyOccurrence(
         name: 'UART',
-        kind: HierarchyKind.module,
       );
 
-      final io = HierarchyNode(
-        id: 'Top/IO',
+      final io = HierarchyOccurrence(
         name: 'IO',
-        kind: HierarchyKind.module,
         children: [uart],
       );
 
-      final root = HierarchyNode(
-        id: 'Top',
+      final root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [cpu, memory, io],
       );
 
       hierarchy = BaseHierarchyAdapter.fromTree(root);
     });
 
-    test('searchModules with glob pattern finds modules', () {
+    test('searchOccurrences with glob pattern finds modules', () {
       // Pattern: *mux* should find MuxUnit (auto-prepended with */)
-      final results = hierarchy.searchModules('*mux*');
+      final results = hierarchy.searchOccurrences('*mux*');
       expect(results, isNotEmpty,
-          reason: 'searchModules should dispatch to regex for glob patterns');
+          reason:
+              'searchOccurrences should dispatch to regex for glob patterns');
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });
 
-    test('searchModules with ** finds deep modules', () {
-      final results = hierarchy.searchModules('**/*mux*');
+    test('searchOccurrences with ** finds deep modules', () {
+      final results = hierarchy.searchOccurrences('**/*mux*');
       expect(results, isNotEmpty);
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });
 
-    test('searchModules with .* matches at one level', () {
+    test('searchOccurrences with .* matches at one level', () {
       // */.*  matches any child one level below root
-      final results = hierarchy.searchModules('*/.*/.*');
+      final results = hierarchy.searchOccurrences('*/.*/.*');
       expect(results.length, greaterThanOrEqualTo(3),
           reason: 'Should match ALU, Decoder, MuxUnit, Cache, DRAM, UART');
     });
 
-    test('searchModules with explicit path pattern', () {
+    test('searchOccurrences with explicit path pattern', () {
       // */CPU/.*  matches children of CPU
-      final results = hierarchy.searchModules('*/CPU/.*');
+      final results = hierarchy.searchOccurrences('*/CPU/.*');
       expect(results.length, 3);
       expect(results.any((r) => r.name == 'ALU'), isTrue);
       expect(results.any((r) => r.name == 'Decoder'), isTrue);
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });
 
-    test('searchModules with alternation', () {
-      final results = hierarchy.searchModules('**/(ALU|DRAM)');
+    test('searchOccurrences with alternation', () {
+      final results = hierarchy.searchOccurrences('**/(ALU|DRAM)');
       expect(results.length, 2);
       expect(results.any((r) => r.name == 'ALU'), isTrue);
       expect(results.any((r) => r.name == 'DRAM'), isTrue);
     });
 
-    test('searchModules without regex uses plain matching', () {
+    test('searchOccurrences without regex uses plain matching', () {
       // Plain query without glob chars uses substring matching
-      final results = hierarchy.searchModules('mux');
+      final results = hierarchy.searchOccurrences('mux');
       expect(results, isNotEmpty);
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });
 
-    test('searchModules with leading **/ is not double-prepended', () {
-      final results = hierarchy.searchModules('**/UART');
+    test('searchOccurrences with leading **/ is not double-prepended', () {
+      final results = hierarchy.searchOccurrences('**/UART');
       expect(results.length, 1);
       expect(results.first.name, 'UART');
     });
 
-    test('searchModules with leading */ is not double-prepended', () {
-      final results = hierarchy.searchModules('*/CPU');
+    test('searchOccurrences with leading */ is not double-prepended', () {
+      final results = hierarchy.searchOccurrences('*/CPU');
       expect(results.length, 1);
       expect(results.first.name, 'CPU');
     });

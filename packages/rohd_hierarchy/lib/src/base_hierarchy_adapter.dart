@@ -12,42 +12,42 @@ import 'package:rohd_hierarchy/src/hierarchy_service.dart';
 
 /// Base class providing shared implementation for hierarchy adapters.
 ///
-/// The [HierarchyNode] tree rooted at [root] is the single source of truth.
-/// Children and signals are read directly from each node's
-/// [HierarchyNode.children] and [HierarchyNode.signals] lists.
-/// Lookups use [HierarchyAddress]-based navigation.
+/// The [HierarchyOccurrence] tree rooted at [root] is the single source of
+/// truth. Children and signals are read directly from each occurrence's
+/// [HierarchyOccurrence.children] and [HierarchyOccurrence.signals] lists.
+/// Lookups use [OccurrenceAddress]-based navigation.
 ///
 /// Concrete adapters should:
 /// 1. Extend this class
-/// 2. Build a complete [HierarchyNode] tree (with children and signals
-///    populated on each node)
-/// 3. Set the [root] node
+/// 2. Build a complete [HierarchyOccurrence] tree (with children and signals
+///    populated on each occurrence)
+/// 3. Set the [root] occurrence
 ///
 /// Search, autocomplete, and signal lookup are implemented by
 /// [HierarchyService] via recursive tree walking.
 abstract class BaseHierarchyAdapter with HierarchyService {
-  HierarchyNode? _root;
+  HierarchyOccurrence? _root;
 
   /// Creates a [BaseHierarchyAdapter].
   BaseHierarchyAdapter();
 
-  /// Creates an adapter wrapping an existing [HierarchyNode] tree.
+  /// Creates an adapter wrapping an existing [HierarchyOccurrence] tree.
   ///
   /// The tree itself is the single source of truth — children and signals
-  /// are read directly from the [HierarchyNode] lists.
+  /// are read directly from the [HierarchyOccurrence] lists.
   ///
   /// Example usage:
   /// ```dart
   /// final treeRoot = await dataSource.evalModuleTree();
   /// final service = BaseHierarchyAdapter.fromTree(treeRoot);
-  /// final children = service.children(service.root.id);
+  /// final paths = service.searchSignalPaths('clk');
   /// ```
   factory BaseHierarchyAdapter.fromTree(
-    HierarchyNode rootNode,
+    HierarchyOccurrence rootNode,
   ) = _TreeBackedAdapter;
 
-  /// Sets the root node.  Call this once during initialisation.
-  set root(HierarchyNode node) {
+  /// Sets the root occurrence.  Call this once during initialisation.
+  set root(HierarchyOccurrence node) {
     _root = node;
   }
 
@@ -56,10 +56,10 @@ abstract class BaseHierarchyAdapter with HierarchyService {
   // ─────────────────────────────────────────────────────────────────────────
 
   @override
-  HierarchyNode get root {
+  HierarchyOccurrence get root {
     if (_root == null) {
       throw StateError(
-          'Root node not set. Call setRoot() during initialization.');
+          'Root occurrence not set. Call setRoot() during initialization.');
     }
     return _root!;
   }
@@ -69,11 +69,12 @@ abstract class BaseHierarchyAdapter with HierarchyService {
 // Tree-backed implementation returned by BaseHierarchyAdapter.fromTree()
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Private adapter that wraps an existing [HierarchyNode] tree.
+/// Private adapter that wraps an existing [HierarchyOccurrence] tree.
 ///
-/// Children and signals are read directly from the tree nodes.
+/// Children and signals are read directly from the tree occurrences.
 class _TreeBackedAdapter extends BaseHierarchyAdapter {
-  _TreeBackedAdapter(HierarchyNode rootNode) {
+  _TreeBackedAdapter(HierarchyOccurrence rootNode) {
     root = rootNode;
+    rootNode.buildAddresses();
   }
 }

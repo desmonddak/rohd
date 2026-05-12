@@ -16,7 +16,7 @@ import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 /// refresh their own UI (e.g. `setState`).
 ///
 /// Generic over the result type [R] — typically [SignalSearchResult]
-/// or [ModuleSearchResult].
+/// or [OccurrenceSearchResult].
 ///
 /// ```dart
 /// // In a Flutter widget:
@@ -57,23 +57,23 @@ class HierarchySearchController<R> {
         searchFn: (q) => hierarchy.searchSignals(q) as List<R>,
         normalizeFn: (q) => HierarchyService.hasRegexChars(q)
             ? q
-            : SignalSearchResult.normalizeQuery(q),
+            : HierarchySearchResult.normalizeQuery(q),
       );
 
-  /// Create a controller for **module** search on the given
+  /// Create a controller for **occurrence** search on the given
   /// [HierarchyService].
   ///
   /// When the query contains glob/regex metacharacters, normalisation
   /// is skipped so that `.` keeps its regex meaning (use `/` as the
   /// hierarchy separator in regex patterns).
-  factory HierarchySearchController.forModules(
+  factory HierarchySearchController.forOccurrences(
     HierarchyService hierarchy,
   ) =>
       HierarchySearchController<R>(
-        searchFn: (q) => hierarchy.searchModules(q) as List<R>,
+        searchFn: (q) => hierarchy.searchOccurrences(q) as List<R>,
         normalizeFn: (q) => HierarchyService.hasRegexChars(q)
             ? q
-            : ModuleSearchResult.normalizeQuery(q),
+            : HierarchySearchResult.normalizeQuery(q),
       );
 
   // ─────────────── State accessors ───────────────
@@ -155,7 +155,7 @@ class HierarchySearchController<R> {
   ///
   /// [displayPath] extracts the comparable path string from each result.
   /// The default implementation handles [SignalSearchResult] and
-  /// [ModuleSearchResult] automatically; pass a custom extractor for
+  /// [OccurrenceSearchResult] automatically; pass a custom extractor for
   /// other result types.
   String? tabComplete(
     String currentQuery, {
@@ -183,10 +183,7 @@ class HierarchySearchController<R> {
 
   /// Default display-path extractor for the well-known result types.
   static String _defaultDisplayPath<T>(T result) {
-    if (result is SignalSearchResult) {
-      return result.displayPath;
-    }
-    if (result is ModuleSearchResult) {
+    if (result is HierarchySearchResult) {
       return result.displayPath;
     }
     return result.toString();

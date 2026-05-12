@@ -58,11 +58,11 @@ void main() {
     test('primitive cells are marked isPrimitive', () {
       // array_slice cells in FilterBank are $slice — primitive
       final sliceCells = service.root.children
-          .where((c) => c.type != null && c.type!.startsWith(r'$'));
+          .where((c) => c.definition != null && c.definition!.startsWith(r'$'));
       expect(sliceCells, isNotEmpty);
       for (final cell in sliceCells) {
         expect(cell.isPrimitive, isTrue,
-            reason: '${cell.name} (${cell.type}) should be primitive');
+            reason: '${cell.name} (${cell.definition}) should be primitive');
       }
     });
 
@@ -71,11 +71,11 @@ void main() {
       for (final prim in primitives) {
         expect(prim.signals, isNotEmpty,
             reason: '${prim.name} should have port signals');
-        // All signals on primitive cells should be Port instances
+        // All signals on primitive cells should have a direction
         for (final s in prim.signals) {
-          expect(s is Port, isTrue,
-              reason: '${prim.name}/${s.name} should be a Port');
-          expect((s as Port).direction, isNotEmpty);
+          expect(s.isPort, isTrue,
+              reason: '${prim.name}/${s.name} should be a port');
+          expect(s.direction, isNotEmpty);
         }
       }
     });
@@ -91,7 +91,7 @@ void main() {
       // CoeffBank has const_0_2_h0 with computed=1
       // Navigate: FilterBank → ch0_1 → one of its children should have
       // a CoeffBank with computed signals
-      bool foundComputed(HierarchyNode node) {
+      bool foundComputed(HierarchyOccurrence node) {
         for (final s in node.signals) {
           if (s.isComputed) {
             return true;
@@ -116,11 +116,11 @@ void main() {
   // ─────────────── HierarchyNode model getters ───────────────
 
   group('HierarchyNode model getters', () {
-    test('ports returns only Port instances', () {
+    test('ports returns only signals with direction', () {
       final ports = service.root.ports;
       expect(ports, isNotEmpty);
       for (final p in ports) {
-        expect(p, isA<Port>());
+        expect(p.isPort, isTrue);
         expect(p.direction, isNotEmpty);
       }
     });
@@ -144,16 +144,16 @@ void main() {
     });
 
     test(r'isPrimitiveType is true for $-prefixed types', () {
-      expect(HierarchyNode.isPrimitiveType(r'$mux'), isTrue);
-      expect(HierarchyNode.isPrimitiveType(r'$and'), isTrue);
+      expect(HierarchyOccurrence.isPrimitiveType(r'$mux'), isTrue);
+      expect(HierarchyOccurrence.isPrimitiveType(r'$and'), isTrue);
     });
 
     test(r'isPrimitiveType is false for non-$-prefixed types', () {
-      expect(HierarchyNode.isPrimitiveType('FilterBank'), isFalse);
+      expect(HierarchyOccurrence.isPrimitiveType('FilterBank'), isFalse);
     });
 
     test('isPrimitiveType is false for empty string', () {
-      expect(HierarchyNode.isPrimitiveType(''), isFalse);
+      expect(HierarchyOccurrence.isPrimitiveType(''), isFalse);
     });
 
     test('isPrimitiveCell reflects isPrimitive field and type', () {
@@ -177,16 +177,16 @@ void main() {
 
     test('depthFirstSignals count equals recursive signal total', () {
       final all = service.root.depthFirstSignals();
-      int countSignals(HierarchyNode n) =>
+      int countSignals(HierarchyOccurrence n) =>
           n.signals.length +
           n.children.fold(0, (sum, c) => sum + countSignals(c));
       expect(all.length, countSignals(service.root));
     });
   });
 
-  // ─────────────── Signal model getters ───────────────
+  // ─────────────── SignalOccurrence model getters ───────────────
 
-  group('Signal model getters', () {
+  group('SignalOccurrence model getters', () {
     test('isPort is true for Port instances', () {
       final port = service.root.signals.first;
       expect(port.isPort, isTrue);
@@ -207,7 +207,7 @@ void main() {
     });
 
     test('isPort is false for non-Port signals (internal wires)', () {
-      // Internal signals (from netnames) are Signal, not Port.
+      // Internal signals (from netnames) are SignalOccurrence, not Port.
       // The fixture includes visible non-port netnames like tapMatch0.
       final allSigs = service.root.depthFirstSignals();
       final nonPorts = allSigs.where((s) => !s.isPort).toList();
@@ -215,7 +215,7 @@ void main() {
           reason: 'Should have non-Port internal signals from netnames');
     });
 
-    test('Signal.toString includes name and width', () {
+    test('SignalOccurrence.toString includes name and width', () {
       final clk = service.root.signals.firstWhere((s) => s.name == 'clk');
       final str = clk.toString();
       expect(str, contains('clk'));
@@ -226,10 +226,10 @@ void main() {
 
   group('HierarchyService — search coverage', () {
     test('searchNodes returns HierarchyNode objects', () {
-      final nodes = service.searchNodes('controller');
+      final nodes = service.matchOccurrences('controller');
       expect(nodes, isNotEmpty);
       for (final n in nodes) {
-        expect(n, isA<HierarchyNode>());
+        expect(n, isA<HierarchyOccurrence>());
       }
     });
 
@@ -388,22 +388,22 @@ void main() {
   // ─────────────── ModuleSearchResult getters ───────────────
 
   group('ModuleSearchResult — additional getters', () {
-    test('kind reflects node.kind', () {
-      final results = service.searchModules('ch0');
+    test('isModule reflects non-primitive node', () {
+      final results = service.searchOccurrences('ch0');
       expect(results, isNotEmpty);
       final r = results.first;
-      expect(r.kind, isNotNull);
+      expect(r.isModule, isNotNull);
     });
 
     test('childCount reflects node.children.length', () {
-      final results = service.searchModules('FilterBank');
+      final results = service.searchOccurrences('FilterBank');
       final fbResult = results.firstWhere((r) => r.path.length == 1,
           orElse: () => results.first);
       expect(fbResult.childCount, greaterThan(0));
     });
 
     test('toString includes module name', () {
-      final results = service.searchModules('ch0');
+      final results = service.searchOccurrences('ch0');
       expect(results.first.toString(), contains('ch0'));
     });
   });
@@ -424,8 +424,7 @@ void main() {
 
   group('BaseHierarchyAdapter — fromTree produces usable root', () {
     test('fromTree immediately sets root', () {
-      final tree =
-          HierarchyNode(id: 'r', name: 'r', kind: HierarchyKind.module);
+      final tree = HierarchyOccurrence(name: 'r');
       final svc = BaseHierarchyAdapter.fromTree(tree);
       expect(svc.root.name, 'r');
     });
@@ -466,9 +465,9 @@ void main() {
     });
 
     test('addresses resolve independently for each instance', () {
-      final ch0Addr = HierarchyAddress.tryFromPathname(
+      final ch0Addr = OccurrenceAddress.tryFromPathname(
           'FilterBank/ch0_1/clk', service.root);
-      final ch1Addr = HierarchyAddress.tryFromPathname(
+      final ch1Addr = OccurrenceAddress.tryFromPathname(
           'FilterBank/ch1_1/clk', service.root);
 
       expect(ch0Addr, isNotNull);
@@ -509,9 +508,9 @@ void main() {
 
     test('internal signals are addressable per-instance', () {
       // validPipe exists as a netname in both FilterChannel definitions
-      final ch0Addr = HierarchyAddress.tryFromPathname(
+      final ch0Addr = OccurrenceAddress.tryFromPathname(
           'FilterBank/ch0_1/validPipe', service.root);
-      final ch1Addr = HierarchyAddress.tryFromPathname(
+      final ch1Addr = OccurrenceAddress.tryFromPathname(
           'FilterBank/ch1_1/validPipe', service.root);
 
       expect(ch0Addr, isNotNull, reason: 'ch0_1/validPipe should resolve');
@@ -548,7 +547,7 @@ void main() {
   group('InOut port — dataBus', () {
     test('root has dataBus as inout port', () {
       final dataBus = service.root.signals
-          .whereType<Port>()
+          .where((s) => s.isPort)
           .where((p) => p.name == 'dataBus')
           .firstOrNull;
       expect(dataBus, isNotNull, reason: 'FilterBank should have dataBus');
@@ -581,7 +580,7 @@ void main() {
 
     test('dataBus is addressable and resolvable', () {
       final addr =
-          HierarchyAddress.tryFromPathname('FilterBank/dataBus', service.root);
+          OccurrenceAddress.tryFromPathname('FilterBank/dataBus', service.root);
       expect(addr, isNotNull, reason: 'dataBus should be addressable');
 
       final sig = service.signalByAddress(addr!);
@@ -605,7 +604,7 @@ void main() {
       expect(sharedBus, isNotNull,
           reason: 'sharedBus_1 cell should be present');
       final childDataBus = sharedBus!.signals
-          .whereType<Port>()
+          .where((s) => s.isPort)
           .where((p) => p.name == 'dataBus')
           .firstOrNull;
       expect(childDataBus, isNotNull,
@@ -615,14 +614,14 @@ void main() {
 
     test('depthFirstSignals includes inout ports', () {
       final all = service.root.depthFirstSignals();
-      final inouts = all.where((s) => s is Port && s.isInout);
+      final inouts = all.where((s) => s.isInout);
       expect(inouts, isNotEmpty,
           reason: 'depthFirstSignals should include inout ports');
     });
 
     test('addressToPathname round-trips for inout signal', () {
       final addr =
-          HierarchyAddress.tryFromPathname('FilterBank/dataBus', service.root);
+          OccurrenceAddress.tryFromPathname('FilterBank/dataBus', service.root);
       expect(addr, isNotNull);
       final pathname = service.addressToPathname(addr!, asSignal: true);
       expect(pathname, 'FilterBank/dataBus');

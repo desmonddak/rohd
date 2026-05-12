@@ -44,29 +44,29 @@ void main() {
       expect(result.displaySegments, equals(['sub1', 'sub2', 'clk']));
     });
 
-    test('intermediateInstanceNames extracts middle segments', () {
+    test('intermediateOccurrenceNames extracts middle segments', () {
       const result = SignalSearchResult(
         signalId: 'Top/sub1/sub2/clk',
         path: ['Top', 'sub1', 'sub2', 'clk'],
       );
-      expect(result.intermediateInstanceNames, equals(['sub1', 'sub2']));
+      expect(result.intermediateOccurrenceNames, equals(['sub1', 'sub2']));
     });
 
-    test('intermediateInstanceNames empty for top-level signal', () {
+    test('intermediateOccurrenceNames empty for top-level signal', () {
       const result = SignalSearchResult(
         signalId: 'Top/clk',
         path: ['Top', 'clk'],
       );
-      expect(result.intermediateInstanceNames, isEmpty);
+      expect(result.intermediateOccurrenceNames, isEmpty);
     });
 
-    test('intermediateInstanceNames empty for single-level nesting', () {
+    test('intermediateOccurrenceNames empty for single-level nesting', () {
       const result = SignalSearchResult(
         signalId: 'Top/sub1/clk',
         path: ['Top', 'sub1', 'clk'],
       );
       // sub1 is both the containing block and an intermediate instance
-      expect(result.intermediateInstanceNames, equals(['sub1']));
+      expect(result.intermediateOccurrenceNames, equals(['sub1']));
     });
 
     test('name returns last path segment', () {
@@ -91,86 +91,82 @@ void main() {
     });
   });
 
-  group('SignalSearchResult.normalizeQuery', () {
+  group('HierarchySearchResult.normalizeQuery', () {
     test('converts dots to slashes', () {
       expect(
-        SignalSearchResult.normalizeQuery('top.cpu.clk'),
+        HierarchySearchResult.normalizeQuery('top.cpu.clk'),
         equals('top/cpu/clk'),
       );
     });
 
     test('preserves slashes', () {
       expect(
-        SignalSearchResult.normalizeQuery('top/cpu/clk'),
+        HierarchySearchResult.normalizeQuery('top/cpu/clk'),
         equals('top/cpu/clk'),
       );
     });
 
     test('handles mixed separators', () {
       expect(
-        SignalSearchResult.normalizeQuery('top.cpu/clk'),
+        HierarchySearchResult.normalizeQuery('top.cpu/clk'),
         equals('top/cpu/clk'),
       );
     });
 
     test('handles empty query', () {
-      expect(SignalSearchResult.normalizeQuery(''), equals(''));
+      expect(HierarchySearchResult.normalizeQuery(''), equals(''));
     });
   });
 
   group('ModuleSearchResult display helpers', () {
-    late HierarchyNode aluNode;
+    late HierarchyOccurrence aluNode;
 
     setUp(() {
-      aluNode = HierarchyNode(
-        id: 'Top/CPU/ALU',
+      aluNode = HierarchyOccurrence(
         name: 'ALU',
-        kind: HierarchyKind.module,
       );
     });
 
     test('displayPath strips top module', () {
-      final result = ModuleSearchResult(
-        moduleId: 'Top/CPU/ALU',
+      final result = OccurrenceSearchResult(
+        occurrenceId: 'Top/CPU/ALU',
         path: const ['Top', 'CPU', 'ALU'],
-        node: aluNode,
+        occurrence: aluNode,
       );
       expect(result.displayPath, equals('CPU/ALU'));
     });
 
     test('displaySegments strips top module', () {
-      final result = ModuleSearchResult(
-        moduleId: 'Top/CPU/ALU',
+      final result = OccurrenceSearchResult(
+        occurrenceId: 'Top/CPU/ALU',
         path: const ['Top', 'CPU', 'ALU'],
-        node: aluNode,
+        occurrence: aluNode,
       );
       expect(result.displaySegments, equals(['CPU', 'ALU']));
     });
 
     test('displayPath for single-segment path', () {
-      final topNode = HierarchyNode(
-        id: 'Top',
+      final topNode = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
       );
-      final result = ModuleSearchResult(
-        moduleId: 'Top',
+      final result = OccurrenceSearchResult(
+        occurrenceId: 'Top',
         path: const ['Top'],
-        node: topNode,
+        occurrence: topNode,
       );
       expect(result.displayPath, equals('Top'));
     });
 
     test('equality based on moduleId', () {
-      final a = ModuleSearchResult(
-        moduleId: 'Top/CPU/ALU',
+      final a = OccurrenceSearchResult(
+        occurrenceId: 'Top/CPU/ALU',
         path: const ['Top', 'CPU', 'ALU'],
-        node: aluNode,
+        occurrence: aluNode,
       );
-      final b = ModuleSearchResult(
-        moduleId: 'Top/CPU/ALU',
+      final b = OccurrenceSearchResult(
+        occurrenceId: 'Top/CPU/ALU',
         path: const ['Top', 'CPU', 'ALU'],
-        node: aluNode,
+        occurrence: aluNode,
       );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
@@ -180,7 +176,7 @@ void main() {
   group('ModuleSearchResult.normalizeQuery', () {
     test('converts dots to slashes', () {
       expect(
-        ModuleSearchResult.normalizeQuery('top.cpu'),
+        HierarchySearchResult.normalizeQuery('top.cpu'),
         equals('top/cpu'),
       );
     });
@@ -191,44 +187,28 @@ void main() {
 
     setUpAll(() {
       // Build: Top -> counter (with clk, data[8] signals)
-      final counter = HierarchyNode(
-        id: 'Top/counter',
+      final counter = HierarchyOccurrence(
         name: 'counter',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-            id: 'Top/counter/clk',
+          SignalOccurrence(
             name: 'clk',
-            type: 'wire',
             width: 1,
-            fullPath: 'Top/counter/clk',
-            scopeId: 'Top/counter',
           ),
-          Signal(
-            id: 'Top/counter/data',
+          SignalOccurrence(
             name: 'data',
-            type: 'wire',
             width: 8,
-            fullPath: 'Top/counter/data',
-            scopeId: 'Top/counter',
           ),
         ],
       );
 
-      final root = HierarchyNode(
-        id: 'Top',
+      final root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [counter],
         signals: [
-          Port(
-            id: 'Top/reset',
+          SignalOccurrence(
             name: 'reset',
-            type: 'wire',
             width: 1,
             direction: 'input',
-            fullPath: 'Top/reset',
-            scopeId: 'Top',
           ),
         ],
       );
@@ -242,7 +222,7 @@ void main() {
       final result = results.first;
       expect(result.signalId, contains('clk'));
       expect(result.displayPath, equals('counter/clk'));
-      expect(result.intermediateInstanceNames, equals(['counter']));
+      expect(result.intermediateOccurrenceNames, equals(['counter']));
     });
 
     test('searchSignals for top-level port', () {
@@ -250,7 +230,7 @@ void main() {
       expect(results, isNotEmpty);
       final result = results.first;
       expect(result.displayPath, equals('reset'));
-      expect(result.intermediateInstanceNames, isEmpty);
+      expect(result.intermediateOccurrenceNames, isEmpty);
     });
   });
 }

@@ -4,9 +4,9 @@
 // coverage_gaps_test.dart
 // Tests for API surface not covered by other test files:
 //   - BaseHierarchyAdapter.root StateError on uninitialized access
-//   - Port.simple factory
-//   - HierarchyNode.parentId
-//   - Signal.value
+//   - SignalOccurrence as port
+//   - HierarchyOccurrence.parent
+//   - SignalOccurrence.value
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -26,133 +26,95 @@ void main() {
     });
   });
 
-  group('Port.simple factory', () {
-    test('creates a port with defaults', () {
-      final p = Port.simple(name: 'clk', direction: 'input');
+  group('SignalOccurrence as port', () {
+    test('creates a port signal with defaults', () {
+      final p = SignalOccurrence(name: 'clk', width: 1, direction: 'input');
       expect(p.name, 'clk');
-      expect(p.id, 'clk'); // defaults to name
       expect(p.direction, 'input');
       expect(p.width, 1);
-      expect(p.type, 'wire');
       expect(p.isPort, isTrue);
       expect(p.isInput, isTrue);
     });
 
-    test('creates a port with explicit overrides', () {
-      final p = Port.simple(
+    test('creates a port signal with explicit overrides', () {
+      final p = SignalOccurrence(
         name: 'data',
         direction: 'output',
         width: 32,
-        id: 'data_out',
-        type: 'logic',
-        fullPath: 'Top/data',
-        scopeId: 'Top',
         isComputed: true,
       );
-      expect(p.id, 'data_out');
+      HierarchyOccurrence(name: 'Top', signals: [p]).buildAddresses();
       expect(p.name, 'data');
       expect(p.width, 32);
-      expect(p.type, 'logic');
       expect(p.direction, 'output');
-      expect(p.fullPath, 'Top/data');
-      expect(p.scopeId, 'Top');
+      expect(p.path(), 'Top/data');
+      expect(p.parent!.path(), 'Top');
       expect(p.isComputed, isTrue);
       expect(p.isOutput, isTrue);
     });
   });
 
-  group('HierarchyNode.parentId', () {
-    test('parentId is null for root', () {
-      final root = HierarchyNode(
-        id: 'Top',
-        name: 'Top',
-        kind: HierarchyKind.module,
-      );
-      expect(root.parentId, isNull);
+  group('HierarchyOccurrence.parent', () {
+    test('parent is null for root', () {
+      final root = HierarchyOccurrence(name: 'Top')..buildAddresses();
+      expect(root.parent, isNull);
     });
 
-    test('parentId is set for child nodes', () {
-      final child = HierarchyNode(
-        id: 'Top/sub',
-        name: 'sub',
-        kind: HierarchyKind.instance,
-        parentId: 'Top',
-      );
-      final root = HierarchyNode(
-        id: 'Top',
-        name: 'Top',
-        kind: HierarchyKind.module,
-        children: [child],
-      );
-      expect(root.children.first.parentId, 'Top');
+    test('parent is set for child nodes after buildAddresses', () {
+      final child = HierarchyOccurrence(name: 'sub');
+      final root = HierarchyOccurrence(name: 'Top', children: [child])
+        ..buildAddresses();
+      expect(child.parent, same(root));
+      expect(child.path(), 'Top/sub');
     });
   });
 
-  group('Signal.value', () {
+  group('SignalOccurrence.value', () {
     test('value is null by default', () {
-      final s = Signal(id: 'a', name: 'a', type: 'wire', width: 1);
+      final s = SignalOccurrence(name: 'a', width: 1);
       expect(s.value, isNull);
     });
 
     test('value stores the provided runtime value', () {
-      final s = Signal(
-        id: 'a',
-        name: 'a',
-        type: 'wire',
-        width: 8,
-        value: 'ff',
-      );
+      final s = SignalOccurrence(name: 'a', width: 8, value: 'ff');
       expect(s.value, 'ff');
     });
   });
 
-  group('HierarchyNode.type', () {
+  group('HierarchyOccurrence.definition', () {
     test('type is null when not provided', () {
-      final n = HierarchyNode(
-        id: 'a',
-        name: 'a',
-        kind: HierarchyKind.module,
-      );
-      expect(n.type, isNull);
+      final n = HierarchyOccurrence(name: 'a');
+      expect(n.definition, isNull);
     });
 
     test('type is stored when provided', () {
-      final n = HierarchyNode(
-        id: 'a',
-        name: 'a',
-        kind: HierarchyKind.instance,
-        type: 'Counter',
-      );
-      expect(n.type, 'Counter');
+      final n = HierarchyOccurrence(name: 'a', definition: 'Counter');
+      expect(n.definition, 'Counter');
     });
   });
 
-  group('Signal.scopeId', () {
-    test('scopeId is null by default', () {
-      final s = Signal(id: 'a', name: 'a', type: 'wire', width: 1);
-      expect(s.scopeId, isNull);
+  group('SignalOccurrence.parent', () {
+    test('parent is null before buildAddresses', () {
+      final s = SignalOccurrence(name: 'a', width: 1);
+      expect(s.parent, isNull);
     });
 
-    test('scopeId is stored when provided', () {
-      final s = Signal(
-        id: 'a',
-        name: 'a',
-        type: 'wire',
-        width: 1,
-        scopeId: 'Top/sub',
-      );
-      expect(s.scopeId, 'Top/sub');
+    test('parent is set after buildAddresses', () {
+      final s = SignalOccurrence(name: 'a', width: 1);
+      HierarchyOccurrence(
+        name: 'Top',
+        children: [
+          HierarchyOccurrence(name: 'sub', signals: [s])
+        ],
+      ).buildAddresses();
+      expect(s.parent!.path(), 'Top/sub');
     });
   });
 
-  group('HierarchyKind on instances', () {
-    test('instance kind is reflected correctly', () {
-      final n = HierarchyNode(
-        id: 'Top/sub',
-        name: 'sub',
-        kind: HierarchyKind.instance,
-      );
-      expect(n.kind, HierarchyKind.instance);
+  group('isPrimitive on nodes', () {
+    test('default isPrimitive is false', () {
+      final n = HierarchyOccurrence(name: 'sub');
+      expect(n.isPrimitive, isFalse);
     });
   });
 }

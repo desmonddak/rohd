@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('Module Tree Search - HierarchyService', () {
-    late HierarchyNode root;
+    late HierarchyOccurrence root;
     late HierarchyService hierarchy;
 
     setUpAll(() {
@@ -24,41 +24,29 @@ void main() {
       //   Memory
       //   ControlUnit
 
-      final alu = HierarchyNode(
-        id: 'Top/CPU/ALU',
+      final alu = HierarchyOccurrence(
         name: 'ALU',
-        kind: HierarchyKind.module,
       );
 
-      final decoder = HierarchyNode(
-        id: 'Top/CPU/Decoder',
+      final decoder = HierarchyOccurrence(
         name: 'Decoder',
-        kind: HierarchyKind.module,
       );
 
-      final cpu = HierarchyNode(
-        id: 'Top/CPU',
+      final cpu = HierarchyOccurrence(
         name: 'CPU',
-        kind: HierarchyKind.module,
         children: [alu, decoder],
       );
 
-      final memory = HierarchyNode(
-        id: 'Top/Memory',
+      final memory = HierarchyOccurrence(
         name: 'Memory',
-        kind: HierarchyKind.module,
       );
 
-      final controlUnit = HierarchyNode(
-        id: 'Top/ControlUnit',
+      final controlUnit = HierarchyOccurrence(
         name: 'ControlUnit',
-        kind: HierarchyKind.module,
       );
 
-      root = HierarchyNode(
-        id: 'Top',
+      root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [cpu, memory, controlUnit],
       );
 
@@ -68,7 +56,7 @@ void main() {
 
     test('root node is accessible', () {
       expect(hierarchy.root.name, equals('Top'));
-      expect(hierarchy.root.kind, equals(HierarchyKind.module));
+      expect(hierarchy.root.isPrimitive, isFalse);
     });
 
     test('children of root are accessible', () {
@@ -79,64 +67,64 @@ void main() {
     });
 
     test('searchNodePaths finds CPU module', () {
-      final results = hierarchy.searchNodePaths('cpu');
+      final results = hierarchy.searchOccurrencePaths('cpu');
       expect(results, isNotEmpty,
           reason: 'Should find CPU module by simple name');
       expect(results.any((path) => path.contains('CPU')), isTrue);
     });
 
     test('searchNodePaths finds ALU with hierarchical query', () {
-      final results = hierarchy.searchNodePaths('cpu/alu');
+      final results = hierarchy.searchOccurrencePaths('cpu/alu');
       expect(results, isNotEmpty,
           reason: 'Should find ALU with hierarchical path');
       expect(results.any((path) => path.contains('ALU')), isTrue);
     });
 
     test('searchNodePaths works with dot notation', () {
-      final results = hierarchy.searchNodePaths('top.cpu.alu');
+      final results = hierarchy.searchOccurrencePaths('top.cpu.alu');
       expect(results, isNotEmpty, reason: 'Should find ALU with dot notation');
       expect(results.any((path) => path.contains('Top/CPU/ALU')), isTrue);
     });
 
     test('searchNodePaths limits results', () {
-      final results = hierarchy.searchNodePaths('', limit: 2);
+      final results = hierarchy.searchOccurrencePaths('', limit: 2);
       expect(results.length, lessThanOrEqualTo(2),
           reason: 'Should respect limit parameter');
     });
 
     test('searchModules returns ModuleSearchResult objects', () {
-      final results = hierarchy.searchModules('memory');
+      final results = hierarchy.searchOccurrences('memory');
       expect(results, isNotEmpty);
-      expect(results.first, isA<ModuleSearchResult>());
+      expect(results.first, isA<OccurrenceSearchResult>());
       expect(results.first.name, equals('Memory'));
       expect(results.first.isModule, isTrue);
     });
 
     test('searchModules result contains full metadata', () {
-      final results = hierarchy.searchModules('decoder');
+      final results = hierarchy.searchOccurrences('decoder');
       expect(results, isNotEmpty);
       final result = results.first;
-      expect(result.moduleId, contains('Decoder'));
+      expect(result.occurrenceId, contains('Decoder'));
       expect(result.path, isNotEmpty);
       expect(result.path.last, equals('Decoder'));
-      expect(result.node, isNotNull);
+      expect(result.occurrence, isNotNull);
     });
 
     test('searchNodePaths returns empty for non-matching query', () {
-      final results = hierarchy.searchNodePaths('nonexistent');
+      final results = hierarchy.searchOccurrencePaths('nonexistent');
       expect(results, isEmpty,
           reason: 'Should return empty list for non-matching query');
     });
 
     test('searchNodePaths returns empty for empty query', () {
-      final results = hierarchy.searchNodePaths('');
+      final results = hierarchy.searchOccurrencePaths('');
       expect(results, isEmpty,
           reason: 'Should return empty list for empty query');
     });
 
     test('searchModules finds modules at different depths', () {
       // Should find both Top and Top/CPU
-      final results = hierarchy.searchModules('top');
+      final results = hierarchy.searchOccurrences('top');
       expect(results.length, greaterThanOrEqualTo(1));
       expect(results.any((r) => r.name == 'Top'), isTrue);
     });
@@ -157,61 +145,43 @@ void main() {
       //     RAM
       //     Cache
 
-      final multiplier = HierarchyNode(
-        id: 'Design/ProcessingUnit/DataPath/Multiplier',
+      final multiplier = HierarchyOccurrence(
         name: 'Multiplier',
-        kind: HierarchyKind.module,
       );
 
-      final adder = HierarchyNode(
-        id: 'Design/ProcessingUnit/DataPath/Adder',
+      final adder = HierarchyOccurrence(
         name: 'Adder',
-        kind: HierarchyKind.module,
       );
 
-      final dataPath = HierarchyNode(
-        id: 'Design/ProcessingUnit/DataPath',
+      final dataPath = HierarchyOccurrence(
         name: 'DataPath',
-        kind: HierarchyKind.module,
         children: [multiplier, adder],
       );
 
-      final controller = HierarchyNode(
-        id: 'Design/ProcessingUnit/Controller',
+      final controller = HierarchyOccurrence(
         name: 'Controller',
-        kind: HierarchyKind.module,
       );
 
-      final processingUnit = HierarchyNode(
-        id: 'Design/ProcessingUnit',
+      final processingUnit = HierarchyOccurrence(
         name: 'ProcessingUnit',
-        kind: HierarchyKind.module,
         children: [dataPath, controller],
       );
 
-      final ram = HierarchyNode(
-        id: 'Design/Memory/RAM',
+      final ram = HierarchyOccurrence(
         name: 'RAM',
-        kind: HierarchyKind.module,
       );
 
-      final cache = HierarchyNode(
-        id: 'Design/Memory/Cache',
+      final cache = HierarchyOccurrence(
         name: 'Cache',
-        kind: HierarchyKind.module,
       );
 
-      final memory = HierarchyNode(
-        id: 'Design/Memory',
+      final memory = HierarchyOccurrence(
         name: 'Memory',
-        kind: HierarchyKind.module,
         children: [ram, cache],
       );
 
-      final root = HierarchyNode(
-        id: 'Design',
+      final root = HierarchyOccurrence(
         name: 'Design',
-        kind: HierarchyKind.module,
         children: [processingUnit, memory],
       );
 
@@ -219,29 +189,29 @@ void main() {
     });
 
     test('single segment matches at any level', () {
-      final results = hierarchy.searchNodePaths('multiplier');
+      final results = hierarchy.searchOccurrencePaths('multiplier');
       expect(results, isNotEmpty,
           reason: 'Should find Multiplier even without full path');
       expect(results.any((r) => r.endsWith('Multiplier')), isTrue);
     });
 
     test('two segment path matches correctly', () {
-      final results = hierarchy.searchNodePaths('datapath/multiplier');
+      final results = hierarchy.searchOccurrencePaths('datapath/multiplier');
       expect(results.any((r) => r.contains('DataPath/Multiplier')), isTrue,
           reason: 'Should find Multiplier under DataPath');
     });
 
     test('full hierarchical path matches precisely', () {
       final results =
-          hierarchy.searchNodePaths('processingunit/datapath/adder');
+          hierarchy.searchOccurrencePaths('processingunit/datapath/adder');
       expect(results.any((r) => r.contains('ProcessingUnit/DataPath/Adder')),
           isTrue,
           reason: 'Should find Adder with full hierarchical path');
     });
 
     test('case insensitive matching works', () {
-      final resultsLower = hierarchy.searchNodePaths('MULTIPLIER');
-      final resultsUpper = hierarchy.searchNodePaths('multiplier');
+      final resultsLower = hierarchy.searchOccurrencePaths('MULTIPLIER');
+      final resultsUpper = hierarchy.searchOccurrencePaths('multiplier');
       expect(resultsLower, isNotEmpty);
       expect(resultsUpper, isNotEmpty);
       expect(resultsLower.length, equals(resultsUpper.length),
@@ -249,43 +219,35 @@ void main() {
     });
 
     test('partial name matching works', () {
-      final results1 = hierarchy.searchNodePaths('path');
+      final results1 = hierarchy.searchOccurrencePaths('path');
       expect(results1.any((r) => r.contains('DataPath')), isTrue,
           reason: 'Should match partial "path" in DataPath');
 
-      final results2 = hierarchy.searchNodePaths('unit');
+      final results2 = hierarchy.searchOccurrencePaths('unit');
       expect(results2.any((r) => r.contains('ProcessingUnit')), isTrue,
           reason: 'Should match partial "unit" in ProcessingUnit');
     });
   });
 
   group('Module Search - Integration with Tree Filtering', () {
-    late HierarchyNode root;
+    late HierarchyOccurrence root;
 
     setUpAll(() {
-      final alu = HierarchyNode(
-        id: 'Top/CPU/ALU',
+      final alu = HierarchyOccurrence(
         name: 'ALU',
-        kind: HierarchyKind.module,
       );
 
-      final cpu = HierarchyNode(
-        id: 'Top/CPU',
+      final cpu = HierarchyOccurrence(
         name: 'CPU',
-        kind: HierarchyKind.module,
         children: [alu],
       );
 
-      final memory = HierarchyNode(
-        id: 'Top/Memory',
+      final memory = HierarchyOccurrence(
         name: 'Memory',
-        kind: HierarchyKind.module,
       );
 
-      root = HierarchyNode(
-        id: 'Top',
+      root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [cpu, memory],
       );
     });
@@ -334,7 +296,7 @@ void main() {
 
 /// Helper function to simulate tree filtering with hierarchical search.
 /// Matches query against node name using hierarchical logic.
-bool _filterNodeRecursive(HierarchyNode node, String query) {
+bool _filterNodeRecursive(HierarchyOccurrence node, String query) {
   final queryParts = query
       .replaceAll('.', '/')
       .toLowerCase()
@@ -347,7 +309,7 @@ bool _filterNodeRecursive(HierarchyNode node, String query) {
 }
 
 bool _matchesHierarchicalQuery(
-    HierarchyNode node, List<String> queryParts, int queryIdx) {
+    HierarchyOccurrence node, List<String> queryParts, int queryIdx) {
   if (queryIdx >= queryParts.length) {
     return true;
   }

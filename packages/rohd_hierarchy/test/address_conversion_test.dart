@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 void main() {
   group('Address ↔ pathname conversion', () {
     late HierarchyService service;
-    late HierarchyNode root;
+    late HierarchyOccurrence root;
 
     // Build a test hierarchy:
     // Top
@@ -25,84 +25,55 @@ void main() {
     //     └─ signals: addr, data
 
     setUpAll(() {
-      final alu = HierarchyNode(
-        id: 'Top/cpu/alu',
+      final alu = HierarchyOccurrence(
         name: 'alu',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              id: 'a',
-              name: 'a',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/cpu/alu/a',
-              scopeId: 'Top/cpu/alu'),
-          Signal(
-              id: 'b',
-              name: 'b',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/cpu/alu/b',
-              scopeId: 'Top/cpu/alu'),
-          Signal(
-              id: 'out',
-              name: 'out',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/cpu/alu/out',
-              scopeId: 'Top/cpu/alu'),
+          SignalOccurrence(
+            name: 'a',
+            width: 1,
+          ),
+          SignalOccurrence(
+            name: 'b',
+            width: 1,
+          ),
+          SignalOccurrence(
+            name: 'out',
+            width: 1,
+          ),
         ],
       );
 
-      final cpu = HierarchyNode(
-        id: 'Top/cpu',
+      final cpu = HierarchyOccurrence(
         name: 'cpu',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              id: 'clk',
-              name: 'clk',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/cpu/clk',
-              scopeId: 'Top/cpu'),
-          Signal(
-              id: 'rst',
-              name: 'rst',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/cpu/rst',
-              scopeId: 'Top/cpu'),
+          SignalOccurrence(
+            name: 'clk',
+            width: 1,
+          ),
+          SignalOccurrence(
+            name: 'rst',
+            width: 1,
+          ),
         ],
         children: [alu],
       );
 
-      final mem = HierarchyNode(
-        id: 'Top/mem',
+      final mem = HierarchyOccurrence(
         name: 'mem',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(
-              id: 'addr',
-              name: 'addr',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/mem/addr',
-              scopeId: 'Top/mem'),
-          Signal(
-              id: 'data',
-              name: 'data',
-              type: 'wire',
-              width: 1,
-              fullPath: 'Top/mem/data',
-              scopeId: 'Top/mem'),
+          SignalOccurrence(
+            name: 'addr',
+            width: 1,
+          ),
+          SignalOccurrence(
+            name: 'data',
+            width: 1,
+          ),
         ],
       );
 
-      root = HierarchyNode(
-        id: 'Top',
+      root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [cpu, mem],
       )..buildAddresses();
 
@@ -176,21 +147,21 @@ void main() {
     group('addressToPathname', () {
       test('root address returns root name', () {
         expect(
-          service.addressToPathname(HierarchyAddress.root),
+          service.addressToPathname(OccurrenceAddress.root),
           equals('Top'),
         );
       });
 
       test('module address resolves correctly', () {
         expect(
-          service.addressToPathname(const HierarchyAddress([0])),
+          service.addressToPathname(const OccurrenceAddress([0])),
           equals('Top/cpu'),
         );
       });
 
       test('nested module address resolves correctly', () {
         expect(
-          service.addressToPathname(const HierarchyAddress([0, 0])),
+          service.addressToPathname(const OccurrenceAddress([0, 0])),
           equals('Top/cpu/alu'),
         );
       });
@@ -198,7 +169,7 @@ void main() {
       test('signal address resolves with asSignal flag', () {
         expect(
           service.addressToPathname(
-            const HierarchyAddress([0, 0]),
+            const OccurrenceAddress([0, 0]),
             asSignal: true,
           ),
           equals('Top/cpu/clk'),
@@ -208,7 +179,7 @@ void main() {
       test('nested signal address resolves with asSignal flag', () {
         expect(
           service.addressToPathname(
-            const HierarchyAddress([0, 0, 2]),
+            const OccurrenceAddress([0, 0, 2]),
             asSignal: true,
           ),
           equals('Top/cpu/alu/out'),
@@ -217,7 +188,7 @@ void main() {
 
       test('out-of-bounds child returns null', () {
         expect(
-          service.addressToPathname(const HierarchyAddress([5])),
+          service.addressToPathname(const OccurrenceAddress([5])),
           isNull,
         );
       });
@@ -225,7 +196,7 @@ void main() {
       test('out-of-bounds signal returns null', () {
         expect(
           service.addressToPathname(
-            const HierarchyAddress([0, 99]),
+            const OccurrenceAddress([0, 99]),
             asSignal: true,
           ),
           isNull,
@@ -235,23 +206,24 @@ void main() {
 
     group('nodeByAddress', () {
       test('root address returns root', () {
-        final node = service.nodeByAddress(HierarchyAddress.root);
+        final node = service.occurrenceByAddress(OccurrenceAddress.root);
         expect(node?.name, equals('Top'));
       });
 
       test('child address returns correct child', () {
-        final node = service.nodeByAddress(const HierarchyAddress([0]));
+        final node = service.occurrenceByAddress(const OccurrenceAddress([0]));
         expect(node?.name, equals('cpu'));
       });
 
       test('nested address returns correct node', () {
-        final node = service.nodeByAddress(const HierarchyAddress([0, 0]));
+        final node =
+            service.occurrenceByAddress(const OccurrenceAddress([0, 0]));
         expect(node?.name, equals('alu'));
       });
 
       test('out-of-bounds returns null', () {
         expect(
-          service.nodeByAddress(const HierarchyAddress([99])),
+          service.occurrenceByAddress(const OccurrenceAddress([99])),
           isNull,
         );
       });
@@ -273,7 +245,7 @@ void main() {
       });
 
       test('root address returns null (not a signal)', () {
-        expect(service.signalByAddress(HierarchyAddress.root), isNull);
+        expect(service.signalByAddress(OccurrenceAddress.root), isNull);
       });
     });
 
@@ -303,7 +275,7 @@ void main() {
       });
 
       test('address → pathname → address preserves module address', () {
-        const addr = HierarchyAddress([0, 0]);
+        const addr = OccurrenceAddress([0, 0]);
         final path = service.addressToPathname(addr);
         expect(path, isNotNull);
         final roundTripped = service.pathnameToAddress(path!);

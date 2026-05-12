@@ -18,177 +18,115 @@ import 'package:test/test.dart';
 /// Build the test hierarchy tree directly, matching the structure
 /// that would be produced from ROHD inspector JSON.
 /// Signals have local IDs and full qualified paths.
-HierarchyNode _buildTestHierarchy() {
-  final cam = HierarchyNode(
-    id: 'Abcd/lab/cam',
+HierarchyOccurrence _buildTestHierarchy() {
+  final cam = HierarchyOccurrence(
     name: 'cam',
-    kind: HierarchyKind.module,
-    parentId: 'Abcd/lab',
     signals: [
-      Port(
-          id: 'clk',
-          name: 'clk',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/lab/cam/clk',
-          scopeId: 'Abcd/lab/cam'),
-      Port(
-          id: 'hit',
-          name: 'hit',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/lab/cam/hit',
-          scopeId: 'Abcd/lab/cam'),
-      Port(
-          id: 'entry',
-          name: 'entry',
-          type: 'wire',
-          width: 32,
-          direction: 'input',
-          fullPath: 'Abcd/lab/cam/entry',
-          scopeId: 'Abcd/lab/cam'),
-      Port(
-          id: 'match_out',
-          name: 'match_out',
-          type: 'wire',
-          width: 1,
-          direction: 'output',
-          fullPath: 'Abcd/lab/cam/match_out',
-          scopeId: 'Abcd/lab/cam'),
+      SignalOccurrence(
+        name: 'clk',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'hit',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'entry',
+        width: 32,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'match_out',
+        width: 1,
+        direction: 'output',
+      ),
     ],
   );
 
-  final lab = HierarchyNode(
-    id: 'Abcd/lab',
+  final lab = HierarchyOccurrence(
     name: 'lab',
-    kind: HierarchyKind.module,
-    parentId: 'Abcd',
     children: [cam],
     signals: [
-      Port(
-          id: 'clk',
-          name: 'clk',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/lab/clk',
-          scopeId: 'Abcd/lab'),
-      Port(
-          id: 'reset',
-          name: 'reset',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/lab/reset',
-          scopeId: 'Abcd/lab'),
-      Port(
-          id: 'fromUpstream_request__st',
-          name: 'fromUpstream_request__st',
-          type: 'wire',
-          width: 64,
-          direction: 'input',
-          fullPath: 'Abcd/lab/fromUpstream_request__st',
-          scopeId: 'Abcd/lab'),
-      Port(
-          id: 'toUpstream_response__st',
-          name: 'toUpstream_response__st',
-          type: 'wire',
-          width: 64,
-          direction: 'output',
-          fullPath: 'Abcd/lab/toUpstream_response__st',
-          scopeId: 'Abcd/lab'),
+      SignalOccurrence(
+        name: 'clk',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'reset',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'fromUpstream_request__st',
+        width: 64,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'toUpstream_response__st',
+        width: 64,
+        direction: 'output',
+      ),
     ],
   );
 
-  final dmaEngine = HierarchyNode(
-    id: 'Abcd/engine',
+  final dmaEngine = HierarchyOccurrence(
     name: 'engine',
-    kind: HierarchyKind.module,
-    parentId: 'Abcd',
     signals: [
-      Port(
-          id: 'clk',
-          name: 'clk',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/engine/clk',
-          scopeId: 'Abcd/engine'),
-      Port(
-          id: 'enable',
-          name: 'enable',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/engine/enable',
-          scopeId: 'Abcd/engine'),
-      Port(
-          id: 'data_in',
-          name: 'data_in',
-          type: 'wire',
-          width: 64,
-          direction: 'input',
-          fullPath: 'Abcd/engine/data_in',
-          scopeId: 'Abcd/engine'),
-      Port(
-          id: 'data_out',
-          name: 'data_out',
-          type: 'wire',
-          width: 64,
-          direction: 'output',
-          fullPath: 'Abcd/engine/data_out',
-          scopeId: 'Abcd/engine'),
-      Port(
-          id: 'done',
-          name: 'done',
-          type: 'wire',
-          width: 1,
-          direction: 'output',
-          fullPath: 'Abcd/engine/done',
-          scopeId: 'Abcd/engine'),
+      SignalOccurrence(
+        name: 'clk',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'enable',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'data_in',
+        width: 64,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'data_out',
+        width: 64,
+        direction: 'output',
+      ),
+      SignalOccurrence(
+        name: 'done',
+        width: 1,
+        direction: 'output',
+      ),
     ],
   );
 
-  return HierarchyNode(
-    id: 'Abcd',
+  return HierarchyOccurrence(
     name: 'Abcd',
-    kind: HierarchyKind.module,
     children: [lab, dmaEngine],
     signals: [
-      Port(
-          id: 'clk',
-          name: 'clk',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/clk',
-          scopeId: 'Abcd'),
-      Port(
-          id: 'resetn',
-          name: 'resetn',
-          type: 'wire',
-          width: 1,
-          direction: 'input',
-          fullPath: 'Abcd/resetn',
-          scopeId: 'Abcd'),
-      Port(
-          id: 'araddr_s',
-          name: 'araddr_s',
-          type: 'wire',
-          width: 32,
-          direction: 'input',
-          fullPath: 'Abcd/araddr_s',
-          scopeId: 'Abcd'),
-      Port(
-          id: 'rdata_s',
-          name: 'rdata_s',
-          type: 'wire',
-          width: 32,
-          direction: 'output',
-          fullPath: 'Abcd/rdata_s',
-          scopeId: 'Abcd'),
+      SignalOccurrence(
+        name: 'clk',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'resetn',
+        width: 1,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'araddr_s',
+        width: 32,
+        direction: 'input',
+      ),
+      SignalOccurrence(
+        name: 'rdata_s',
+        width: 32,
+        direction: 'output',
+      ),
     ],
   );
 }
@@ -209,7 +147,8 @@ void main() {
     // address_conversion_test, and module_search_test.
     //
     // This group focuses on what is unique to the DevTools local-ID flow:
-    // search correctness when Signal.id is a local name (not a full path).
+    // search correctness when SignalOccurrence.name is a local name (not a full
+    // path).
 
     test('search works with local signal IDs', () {
       // Plain prefix search still finds signals by name
@@ -224,42 +163,42 @@ void main() {
 
     test('signalByAddress resolves despite local IDs', () {
       final addr =
-          HierarchyAddress.tryFromPathname('Abcd/lab/cam/hit', service.root);
+          OccurrenceAddress.tryFromPathname('Abcd/lab/cam/hit', service.root);
       expect(addr, isNotNull);
       final hit = service.signalByAddress(addr!);
       expect(hit, isNotNull);
       expect(hit!.name, 'hit');
-      expect(hit.id, 'hit'); // local, not full path
-      expect(hit.fullPath, 'Abcd/lab/cam/hit');
+      expect(hit.name, 'hit'); // local, not full path
+      expect(hit.path(), 'Abcd/lab/cam/hit');
     });
 
     test('searchModules works with local-ID tree', () {
-      final results = service.searchModules('cam');
+      final results = service.searchOccurrences('cam');
       expect(results, isNotEmpty);
-      expect(results.first.node.name, 'cam');
+      expect(results.first.occurrence.name, 'cam');
     });
   });
 
-  // ── Signal ID format verification ──
+  // ── SignalOccurrence ID format verification ──
 
   group('local signal ID format', () {
     test('signals have local IDs (not full paths)', () {
       final sigs = service.root.signals;
       final clk = sigs.firstWhere((s) => s.name == 'clk');
       // The signal id is the local name, not the full path
-      expect(clk.id, 'clk');
+      expect(clk.name, 'clk');
       // But fullPath is the full qualified path
-      expect(clk.fullPath, 'Abcd/clk');
+      expect(clk.path(), 'Abcd/clk');
     });
 
     test('local signal IDs do not break address resolution', () {
-      final addr = HierarchyAddress.tryFromPathname(
+      final addr = OccurrenceAddress.tryFromPathname(
           'Abcd/lab/cam/match_out', service.root);
       expect(addr, isNotNull);
       final result = service.signalByAddress(addr!);
       expect(result, isNotNull);
       expect(result!.name, 'match_out');
-      expect(result.id, 'match_out'); // local name
+      expect(result.name, 'match_out'); // local name
     });
 
     test('search results carry the correct signal object', () {
@@ -267,8 +206,8 @@ void main() {
       expect(results, isNotEmpty);
       final r = results.first;
       expect(r.signal, isNotNull);
-      expect(r.signal!.id, 'rdata_s'); // local name
-      expect(r.signal!.fullPath, 'Abcd/rdata_s'); // full path
+      expect(r.signal!.name, 'rdata_s'); // local name
+      expect(r.signal!.path(), 'Abcd/rdata_s'); // full path
       expect(r.signal!.width, 32);
     });
   });

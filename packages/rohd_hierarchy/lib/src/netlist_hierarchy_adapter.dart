@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // netlist_hierarchy_adapter.dart
-// Hierarchy adapter for netlist format (currently Yosys JSON)
+// Hierarchy adapter for netlist JSON format (derived from Yosys JSON)
 // using rohd_hierarchy.
 //
 // 2026 January
@@ -21,25 +21,25 @@ import 'package:rohd_hierarchy/src/hierarchy_models.dart';
 /// JSON parsing logic is implemented here.
 ///
 /// Features:
-/// - Parses ports, netnames, and cells from Yosys JSON
+/// - Parses ports, netnames, and cells from netlist JSON
 /// - Filters auto-generated netnames (`hide_name`, `$`-prefixed, port dupes)
 /// - Extracts `port_directions` on primitive cells for signal visibility
 /// - Supports optional root-name override for VCD name alignment
 class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
   NetlistHierarchyAdapter._();
 
-  /// Convenience factory to parse a Yosys JSON string directly.
+  /// Convenience factory to parse a netlist JSON string directly.
   ///
   /// [rootNameOverride] replaces the top-module name derived from the JSON.
   /// Use this when VCD scopes use instance names that differ from the
-  /// definition names in the Yosys output (e.g. `atcb` vs `Atcb`).
+  /// definition names in the netlist output (often capitalized).
   factory NetlistHierarchyAdapter.fromJson(
     String netlistJson, {
     String? rootNameOverride,
   }) {
     final obj = jsonDecode(netlistJson);
     if (obj is! Map<String, dynamic>) {
-      throw const FormatException('Invalid Yosys JSON root');
+      throw const FormatException('Invalid netlist JSON root');
     }
     return NetlistHierarchyAdapter.fromMap(
       obj,
@@ -47,7 +47,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
     );
   }
 
-  /// Factory to parse a pre-decoded Yosys JSON map.
+  /// Factory to parse a pre-decoded netlist JSON map.
   ///
   /// [netlistJson] must contain a top-level `modules` key.
   /// [rootNameOverride] optionally replaces the detected top-module name.
@@ -66,7 +66,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
   }) {
     final modules = netlistJson['modules'] as Map<String, dynamic>?;
     if (modules == null || modules.isEmpty) {
-      throw const FormatException('Yosys JSON contained no modules');
+      throw const FormatException('Netlist JSON contained no modules');
     }
 
     // Find top module or default to first
@@ -83,46 +83,40 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
 
     final rootNode = _parseModule(
       name: resolvedRootName,
-      path: resolvedRootName,
-      parentId: null,
       moduleData: modules[topName] as Map<String, dynamic>,
       allModules: modules,
     );
     root = rootNode;
+    rootNode.buildAddresses();
   }
 
-  /// Parse a module and return the created [HierarchyNode].
-  /// The returned node has its [HierarchyNode.children] and
-  /// [HierarchyNode.signals] lists populated.
-  HierarchyNode _parseModule({
+  /// Parse a module definition and return the created
+  /// [HierarchyOccurrence].
+  HierarchyOccurrence _parseModule({
     required String name,
-    required String path,
-    required String? parentId,
     required Map<String, dynamic> moduleData,
     required Map<String, dynamic> allModules,
   }) {
     // Ports (signals with direction)
     final portsData = moduleData['ports'] as Map<String, dynamic>?;
-    final signalsList = <Signal>[
+    final signalsList = <SignalOccurrence>[
       if (portsData != null)
-        ...portsData.entries.map((entry) {
-          final p = entry.value as Map<String, dynamic>;
+        ...portsData.entries.indexed.map((entry) {
+          final (idx, kv) = entry;
+          final p = kv.value as Map<String, dynamic>;
           final dir = p['direction']?.toString() ?? 'inout';
           final bits = (p['bits'] as List?)?.length ?? 0;
-          final signalPath = '$path/${entry.key}';
-          return Port.simple(
-            id: signalPath,
-            name: entry.key,
+          return SignalOccurrence(
+            name: kv.key,
             direction: dir,
             width: bits > 0 ? bits : 1,
-            fullPath: signalPath,
-            scopeId: path,
+            portIndex: idx,
           );
         }),
     ];
 
     // Netnames (internal signals without direction).
-    // Yosys `netnames` contains ALL named wires including port-connected
+    // Netlist `netnames` contains ALL named signals including port-connected
     // ones.  We skip names already covered by `ports` above, as well as
     // auto-generated names (hide_name=1 or $-prefixed).
     final netsData = moduleData['netnames'] as Map<String, dynamic>?;
@@ -142,21 +136,16 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
         final attrs = netData['attributes'] as Map<String, dynamic>?;
         final isComputed =
             attrs?['computed'] == 1 || attrs?['computed'] == true;
-        final signalPath = '$path/${entry.key}';
-        return Signal(
-          id: signalPath,
+        return SignalOccurrence(
           name: entry.key,
-          type: 'wire',
           width: bits > 0 ? bits : 1,
-          fullPath: signalPath,
-          scopeId: path,
           isComputed: isComputed,
         );
       }));
     }
 
     // Cells -> submodules or instances
-    final childNodes = <HierarchyNode>[];
+    final childNodes = <HierarchyOccurrence>[];
     final cells = moduleData['cells'] as Map<String, dynamic>?;
     if (cells != null) {
       for (final entry in cells.entries) {
@@ -165,53 +154,44 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
         final cellType = cellData['type']?.toString() ?? '';
 
         if (allModules.containsKey(cellType) &&
-            !HierarchyNode.isPrimitiveType(cellType)) {
-          final childPath = '$path/$cellName';
+            !HierarchyOccurrence.isPrimitiveType(cellType)) {
           final childNode = _parseModule(
             name: cellName,
-            path: childPath,
-            parentId: path,
             moduleData: allModules[cellType] as Map<String, dynamic>,
             allModules: allModules,
           );
           childNodes.add(childNode);
         } else {
-          // Primitive cell — create leaf node.
+          // Primitive cell — create leaf occurrence.
           // Extract port signals from `port_directions` when available so
           // that primitive I/O appears in signal search results.
-          final instId = '$path/$cellName';
           final isCellComputed = cellType.startsWith(r'$');
           final portDirections =
               cellData['port_directions'] as Map<String, dynamic>?;
           final connections = cellData['connections'] as Map<String, dynamic>?;
           final portWidths = cellData['port_widths'] as Map<String, dynamic>?;
-          final cellSignals = <Signal>[
+          final cellSignals = <SignalOccurrence>[
             if (portDirections != null)
-              ...portDirections.entries.map((pEntry) {
-                final pName = pEntry.key;
-                final pDir = pEntry.value.toString();
+              ...portDirections.entries.indexed.map((pEntry) {
+                final (pIdx, kv) = pEntry;
+                final pName = kv.key;
+                final pDir = kv.value.toString();
                 final bits = (connections?[pName] as List?)?.length ??
                     (portWidths?[pName] as int?) ??
                     1;
-                final signalFullPath = '$instId/$pName';
-                return Port.simple(
-                  id: signalFullPath,
+                return SignalOccurrence(
                   name: pName,
                   direction: pDir,
                   width: bits,
-                  fullPath: signalFullPath,
-                  scopeId: instId,
                   isComputed: isCellComputed,
+                  portIndex: pIdx,
                 );
               }),
           ];
 
-          final instNode = HierarchyNode(
-            id: instId,
+          final instNode = HierarchyOccurrence(
             name: cellName,
-            kind: HierarchyKind.instance,
-            type: cellType,
-            parentId: path,
+            definition: cellType,
             isPrimitive: true,
             signals: cellSignals,
           );
@@ -220,13 +200,10 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
       }
     }
 
-    // Create the module node with children and signals embedded
-    return HierarchyNode(
-      id: path,
+    // Create the occurrence with children and signals embedded
+    return HierarchyOccurrence(
       name: name,
-      kind: HierarchyKind.module,
-      type: name,
-      parentId: parentId,
+      definition: name,
       signals: signalsList,
       children: childNodes,
     );

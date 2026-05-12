@@ -12,54 +12,34 @@ import 'package:test/test.dart';
 
 /// Minimal hierarchy for testing the controller with a real
 /// HierarchyService.
-HierarchyNode _buildTestTree() => HierarchyNode(
-      id: 'Top',
+HierarchyOccurrence _buildTestTree() => HierarchyOccurrence(
       name: 'Top',
-      kind: HierarchyKind.module,
       signals: [
-        Signal(id: 'Top/clk', name: 'clk', type: 'wire', width: 1),
-        Signal(id: 'Top/rst', name: 'rst', type: 'wire', width: 1),
+        SignalOccurrence(name: 'clk', width: 1),
+        SignalOccurrence(name: 'rst', width: 1),
       ],
       children: [
-        HierarchyNode(
-          id: 'Top/cpu',
+        HierarchyOccurrence(
           name: 'cpu',
-          kind: HierarchyKind.instance,
-          parentId: 'Top',
           signals: [
-            Signal(
-                id: 'Top/cpu/data_in', name: 'data_in', type: 'wire', width: 8),
-            Signal(
-                id: 'Top/cpu/data_out',
-                name: 'data_out',
-                type: 'wire',
-                width: 8),
+            SignalOccurrence(name: 'data_in', width: 8),
+            SignalOccurrence(name: 'data_out', width: 8),
           ],
           children: [
-            HierarchyNode(
-              id: 'Top/cpu/alu',
+            HierarchyOccurrence(
               name: 'alu',
-              kind: HierarchyKind.instance,
-              parentId: 'Top/cpu',
               signals: [
-                Signal(id: 'Top/cpu/alu/a', name: 'a', type: 'wire', width: 16),
-                Signal(id: 'Top/cpu/alu/b', name: 'b', type: 'wire', width: 16),
-                Signal(
-                    id: 'Top/cpu/alu/result',
-                    name: 'result',
-                    type: 'wire',
-                    width: 16),
+                SignalOccurrence(name: 'a', width: 16),
+                SignalOccurrence(name: 'b', width: 16),
+                SignalOccurrence(name: 'result', width: 16),
               ],
             ),
           ],
         ),
-        HierarchyNode(
-          id: 'Top/mem',
+        HierarchyOccurrence(
           name: 'mem',
-          kind: HierarchyKind.instance,
-          parentId: 'Top',
           signals: [
-            Signal(id: 'Top/mem/addr', name: 'addr', type: 'wire', width: 32),
+            SignalOccurrence(name: 'addr', width: 32),
           ],
         ),
       ],
@@ -68,12 +48,12 @@ HierarchyNode _buildTestTree() => HierarchyNode(
 void main() {
   late BaseHierarchyAdapter hierarchy;
   late HierarchySearchController<SignalSearchResult> signalCtrl;
-  late HierarchySearchController<ModuleSearchResult> moduleCtrl;
+  late HierarchySearchController<OccurrenceSearchResult> moduleCtrl;
 
   setUp(() {
     hierarchy = BaseHierarchyAdapter.fromTree(_buildTestTree());
     signalCtrl = HierarchySearchController.forSignals(hierarchy);
-    moduleCtrl = HierarchySearchController.forModules(hierarchy);
+    moduleCtrl = HierarchySearchController.forOccurrences(hierarchy);
   });
 
   group('HierarchySearchController — signal search', () {
@@ -220,13 +200,13 @@ void main() {
     test('finds modules by name', () {
       moduleCtrl.updateQuery('cpu');
       expect(moduleCtrl.hasResults, isTrue);
-      expect(moduleCtrl.results.first.node.name, 'cpu');
+      expect(moduleCtrl.results.first.occurrence.name, 'cpu');
     });
 
     test('finds nested modules', () {
       moduleCtrl.updateQuery('alu');
       expect(moduleCtrl.hasResults, isTrue);
-      expect(moduleCtrl.results.first.node.name, 'alu');
+      expect(moduleCtrl.results.first.occurrence.name, 'alu');
     });
 
     test('counterText and selection work for modules', () {
@@ -292,59 +272,32 @@ void main() {
     setUp(() {
       // VCD/FST files produce dot-separated IDs like "testbench.childA.clk"
       vcdHierarchy = BaseHierarchyAdapter.fromTree(
-        HierarchyNode(
-          id: 'testbench',
+        HierarchyOccurrence(
           name: 'testbench',
-          kind: HierarchyKind.module,
           signals: [
-            Signal(id: 'testbench.clk', name: 'clk', type: 'wire', width: 1),
-            Signal(id: 'testbench.rst', name: 'rst', type: 'wire', width: 1),
+            SignalOccurrence(name: 'clk', width: 1),
+            SignalOccurrence(name: 'rst', width: 1),
           ],
           children: [
-            HierarchyNode(
-              id: 'testbench.childA',
+            HierarchyOccurrence(
               name: 'childA',
-              kind: HierarchyKind.instance,
-              parentId: 'testbench',
               signals: [
-                Signal(
-                    id: 'testbench.childA.clk',
-                    name: 'clk',
-                    type: 'wire',
-                    width: 1),
-                Signal(
-                    id: 'testbench.childA.data',
-                    name: 'data',
-                    type: 'wire',
-                    width: 8),
+                SignalOccurrence(name: 'clk', width: 1),
+                SignalOccurrence(name: 'data', width: 8),
               ],
               children: [
-                HierarchyNode(
-                  id: 'testbench.childA.sub',
+                HierarchyOccurrence(
                   name: 'sub',
-                  kind: HierarchyKind.instance,
-                  parentId: 'testbench.childA',
                   signals: [
-                    Signal(
-                        id: 'testbench.childA.sub.out',
-                        name: 'out',
-                        type: 'wire',
-                        width: 4),
+                    SignalOccurrence(name: 'out', width: 4),
                   ],
                 ),
               ],
             ),
-            HierarchyNode(
-              id: 'testbench.childB',
+            HierarchyOccurrence(
               name: 'childB',
-              kind: HierarchyKind.instance,
-              parentId: 'testbench',
               signals: [
-                Signal(
-                    id: 'testbench.childB.enable',
-                    name: 'enable',
-                    type: 'wire',
-                    width: 1),
+                SignalOccurrence(name: 'enable', width: 1),
               ],
             ),
           ],
@@ -368,13 +321,13 @@ void main() {
     test('searchSignals with slash query finds dot-separated signal', () {
       final results = vcdHierarchy.searchSignals('childA/clk');
       expect(results, isNotEmpty);
-      expect(results.first.signal!.id, 'testbench.childA.clk');
+      expect(results.first.signal!.path(), 'testbench/childA/clk');
     });
 
     test('searchModules with slash query finds dot-separated module', () {
-      final results = vcdHierarchy.searchModules('childA');
+      final results = vcdHierarchy.searchOccurrences('childA');
       expect(results, isNotEmpty);
-      expect(results.first.node.id, 'testbench.childA');
+      expect(results.first.occurrence.path(), 'testbench/childA');
     });
 
     test('searchSignalPaths with dot query still works', () {
@@ -388,16 +341,16 @@ void main() {
       // Glob wildcard should work across dot-separated IDs
       final results = vcdHierarchy.searchSignals('**/clk');
       expect(results.length, greaterThanOrEqualTo(2));
-      final ids = results.map((r) => r.signal!.id).toSet();
-      expect(ids, contains('testbench.clk'));
-      expect(ids, contains('testbench.childA.clk'));
+      final ids = results.map((r) => r.signal!.path()).toSet();
+      expect(ids, contains('testbench/clk'));
+      expect(ids, contains('testbench/childA/clk'));
     });
 
     test('searchSignals with single segment on dot-separated paths', () {
       // Single segment search should use startsWith
       final results = vcdHierarchy.searchSignals('ena');
       expect(results, isNotEmpty);
-      expect(results.first.signal!.id, 'testbench.childB.enable');
+      expect(results.first.signal!.path(), 'testbench/childB/enable');
     });
 
     test('controller forSignals works with dot-separated hierarchy', () {
@@ -405,7 +358,7 @@ void main() {
           HierarchySearchController<SignalSearchResult>.forSignals(vcdHierarchy)
             ..updateQuery('childA/clk');
       expect(ctrl.results, isNotEmpty);
-      expect(ctrl.results.first.signal!.id, 'testbench.childA.clk');
+      expect(ctrl.results.first.signal!.path(), 'testbench/childA/clk');
     });
   });
 
@@ -415,118 +368,83 @@ void main() {
   group('DevTools flow — local signal IDs → BaseHierarchyAdapter.fromTree', () {
     late BaseHierarchyAdapter rohdHierarchy;
     late HierarchySearchController<SignalSearchResult> rohdSignalCtrl;
-    late HierarchySearchController<ModuleSearchResult> rohdModuleCtrl;
+    late HierarchySearchController<OccurrenceSearchResult> rohdModuleCtrl;
 
     setUp(() {
       // Build a tree with local signal IDs (not full paths) — this is the key
       // difference from the VCD path where IDs are full paths.
-      final alu = HierarchyNode(
-        id: 'Top/cpu/alu',
+      final alu = HierarchyOccurrence(
         name: 'alu',
-        kind: HierarchyKind.module,
-        parentId: 'Top/cpu',
         signals: [
-          Port(
-              id: 'a',
-              name: 'a',
-              type: 'wire',
-              width: 16,
-              direction: 'input',
-              fullPath: 'Top/cpu/alu/a',
-              scopeId: 'Top/cpu/alu'),
-          Port(
-              id: 'b',
-              name: 'b',
-              type: 'wire',
-              width: 16,
-              direction: 'input',
-              fullPath: 'Top/cpu/alu/b',
-              scopeId: 'Top/cpu/alu'),
-          Port(
-              id: 'result',
-              name: 'result',
-              type: 'wire',
-              width: 16,
-              direction: 'output',
-              fullPath: 'Top/cpu/alu/result',
-              scopeId: 'Top/cpu/alu'),
+          SignalOccurrence(
+            name: 'a',
+            width: 16,
+            direction: 'input',
+          ),
+          SignalOccurrence(
+            name: 'b',
+            width: 16,
+            direction: 'input',
+          ),
+          SignalOccurrence(
+            name: 'result',
+            width: 16,
+            direction: 'output',
+          ),
         ],
       );
-      final cpu = HierarchyNode(
-        id: 'Top/cpu',
+      final cpu = HierarchyOccurrence(
         name: 'cpu',
-        kind: HierarchyKind.module,
-        parentId: 'Top',
         children: [alu],
         signals: [
-          Port(
-              id: 'data_in',
-              name: 'data_in',
-              type: 'wire',
-              width: 8,
-              direction: 'input',
-              fullPath: 'Top/cpu/data_in',
-              scopeId: 'Top/cpu'),
-          Port(
-              id: 'data_out',
-              name: 'data_out',
-              type: 'wire',
-              width: 8,
-              direction: 'output',
-              fullPath: 'Top/cpu/data_out',
-              scopeId: 'Top/cpu'),
+          SignalOccurrence(
+            name: 'data_in',
+            width: 8,
+            direction: 'input',
+          ),
+          SignalOccurrence(
+            name: 'data_out',
+            width: 8,
+            direction: 'output',
+          ),
         ],
       );
-      final mem = HierarchyNode(
-        id: 'Top/mem',
+      final mem = HierarchyOccurrence(
         name: 'mem',
-        kind: HierarchyKind.module,
-        parentId: 'Top',
         signals: [
-          Port(
-              id: 'addr',
-              name: 'addr',
-              type: 'wire',
-              width: 32,
-              direction: 'input',
-              fullPath: 'Top/mem/addr',
-              scopeId: 'Top/mem'),
+          SignalOccurrence(
+            name: 'addr',
+            width: 32,
+            direction: 'input',
+          ),
         ],
       );
-      final root = HierarchyNode(
-        id: 'Top',
+      final root = HierarchyOccurrence(
         name: 'Top',
-        kind: HierarchyKind.module,
         children: [cpu, mem],
         signals: [
-          Port(
-              id: 'clk',
-              name: 'clk',
-              type: 'wire',
-              width: 1,
-              direction: 'input',
-              fullPath: 'Top/clk',
-              scopeId: 'Top'),
-          Port(
-              id: 'rst',
-              name: 'rst',
-              type: 'wire',
-              width: 1,
-              direction: 'input',
-              fullPath: 'Top/rst',
-              scopeId: 'Top'),
+          SignalOccurrence(
+            name: 'clk',
+            width: 1,
+            direction: 'input',
+          ),
+          SignalOccurrence(
+            name: 'rst',
+            width: 1,
+            direction: 'input',
+          ),
         ],
       )..buildAddresses();
       rohdHierarchy = BaseHierarchyAdapter.fromTree(root);
       rohdSignalCtrl = HierarchySearchController.forSignals(rohdHierarchy);
-      rohdModuleCtrl = HierarchySearchController.forModules(rohdHierarchy);
+      rohdModuleCtrl = HierarchySearchController.forOccurrences(rohdHierarchy);
     });
 
     test('signal IDs are local (not full paths)', () {
       final rootSigs = rohdHierarchy.root.signals;
       final clk = rootSigs.firstWhere((s) => s.name == 'clk');
-      expect(clk.id, 'clk');
-      expect(clk.fullPath, 'Top/clk');
+      expect(clk.name, 'clk');
+      expect(clk.path(), 'Top/clk');
     });
 
     test('updateQuery finds signals despite local IDs', () {
@@ -537,15 +455,15 @@ void main() {
 
     test('signalByAddress works with full path', () {
       final addr =
-          HierarchyAddress.tryFromPathname('Top/clk', rohdHierarchy.root);
+          OccurrenceAddress.tryFromPathname('Top/clk', rohdHierarchy.root);
       final result = rohdHierarchy.signalByAddress(addr!);
       expect(result, isNotNull);
       expect(result!.name, 'clk');
     });
 
     test('signalByAddress works with nested path', () {
-      final addr =
-          HierarchyAddress.tryFromPathname('Top/cpu/alu/a', rohdHierarchy.root);
+      final addr = OccurrenceAddress.tryFromPathname(
+          'Top/cpu/alu/a', rohdHierarchy.root);
       final result = rohdHierarchy.signalByAddress(addr!);
       expect(result, isNotNull);
       expect(result!.name, 'a');
@@ -568,7 +486,7 @@ void main() {
     test('module search works', () {
       rohdModuleCtrl.updateQuery('alu');
       expect(rohdModuleCtrl.hasResults, isTrue);
-      expect(rohdModuleCtrl.results.first.node.name, 'alu');
+      expect(rohdModuleCtrl.results.first.occurrence.name, 'alu');
     });
 
     test('search results match VCD-style tree results', () {

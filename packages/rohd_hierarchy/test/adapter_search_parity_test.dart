@@ -10,16 +10,21 @@
 
 // This is the key contract: once a HierarchyService is built, callers
 // cannot tell whether the data came from VCD (BaseHierarchyAdapter.fromTree),
-// Yosys JSON (NetlistHierarchyAdapter), or any other source.
+// netlist JSON (NetlistHierarchyAdapter), or any other source.
 
 import 'dart:convert';
 
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:test/test.dart';
 
-/// Resolve a pathname to a [Signal] via [HierarchyAddress.tryFromPathname].
-Signal? _resolve(HierarchyService svc, String path) {
-  final addr = HierarchyAddress.tryFromPathname(path, svc.root);
+/// Concrete subclass that does NOT set root, so we can test the
+/// StateError thrown by uninitialized access.
+class _UnsetAdapter extends BaseHierarchyAdapter {}
+
+/// Resolve a pathname to a [SignalOccurrence] via
+/// [OccurrenceAddress.tryFromPathname].
+SignalOccurrence? _resolve(HierarchyService svc, String path) {
+  final addr = OccurrenceAddress.tryFromPathname(path, svc.root);
   if (addr == null) {
     return null;
   }
@@ -33,49 +38,27 @@ Signal? _resolve(HierarchyService svc, String path) {
 /// VCD-style: HierarchyNode tree with children/signals populated inline.
 /// This is what `wellen` produces when loading a VCD/FST file.
 BaseHierarchyAdapter _buildVcdAdapter() => BaseHierarchyAdapter.fromTree(
-      HierarchyNode(
-        id: 'Abcd',
+      HierarchyOccurrence(
         name: 'Abcd',
-        kind: HierarchyKind.module,
         signals: [
-          Signal(id: 'Abcd/clk', name: 'clk', type: 'wire', width: 1),
-          Signal(id: 'Abcd/resetn', name: 'resetn', type: 'wire', width: 1),
-          Signal(
-              id: 'Abcd/arvalid_s', name: 'arvalid_s', type: 'wire', width: 1),
+          SignalOccurrence(name: 'clk', width: 1),
+          SignalOccurrence(name: 'resetn', width: 1),
+          SignalOccurrence(name: 'arvalid_s', width: 1),
         ],
         children: [
-          HierarchyNode(
-            id: 'Abcd/lab',
+          HierarchyOccurrence(
             name: 'lab',
-            kind: HierarchyKind.instance,
-            parentId: 'Abcd',
             signals: [
-              Signal(id: 'Abcd/lab/clk', name: 'clk', type: 'wire', width: 1),
-              Signal(
-                  id: 'Abcd/lab/reset', name: 'reset', type: 'wire', width: 1),
-              Signal(
-                  id: 'Abcd/lab/fromUpstream_request__st',
-                  name: 'fromUpstream_request__st',
-                  type: 'wire',
-                  width: 64),
+              SignalOccurrence(name: 'clk', width: 1),
+              SignalOccurrence(name: 'reset', width: 1),
+              SignalOccurrence(name: 'fromUpstream_request__st', width: 64),
             ],
             children: [
-              HierarchyNode(
-                id: 'Abcd/lab/cam',
+              HierarchyOccurrence(
                 name: 'cam',
-                kind: HierarchyKind.instance,
-                parentId: 'Abcd/lab',
                 signals: [
-                  Signal(
-                      id: 'Abcd/lab/cam/hit',
-                      name: 'hit',
-                      type: 'wire',
-                      width: 1),
-                  Signal(
-                      id: 'Abcd/lab/cam/entry',
-                      name: 'entry',
-                      type: 'wire',
-                      width: 32),
+                  SignalOccurrence(name: 'hit', width: 1),
+                  SignalOccurrence(name: 'entry', width: 32),
                 ],
               ),
             ],
@@ -84,8 +67,8 @@ BaseHierarchyAdapter _buildVcdAdapter() => BaseHierarchyAdapter.fromTree(
       ),
     );
 
-/// Yosys JSON-style: flat-map adapter (like what DevTools/schematic viewer
-/// builds from ROHD inspector JSON or Yosys JSON).
+/// Netlist JSON-style: flat-map adapter (like what DevTools/schematic viewer
+/// builds from ROHD inspector JSON or netlist JSON).
 /// Children and signals live in the adapter's flat maps, NOT inside
 /// the HierarchyNode objects.
 NetlistHierarchyAdapter _buildJsonAdapter() =>
@@ -242,19 +225,27 @@ void main() {
     });
 
     test('searchModules — same module names', () {
-      final vcdNodes =
-          vcdService.searchModules('lab').map((r) => r.node.name).toSet();
-      final jsonNodes =
-          jsonService.searchModules('lab').map((r) => r.node.name).toSet();
+      final vcdNodes = vcdService
+          .searchOccurrences('lab')
+          .map((r) => r.occurrence.name)
+          .toSet();
+      final jsonNodes = jsonService
+          .searchOccurrences('lab')
+          .map((r) => r.occurrence.name)
+          .toSet();
       expect(vcdNodes, isNotEmpty);
       expect(vcdNodes, jsonNodes);
     });
 
     test('searchModules nested — same module names', () {
-      final vcdNodes =
-          vcdService.searchModules('cam').map((r) => r.node.name).toSet();
-      final jsonNodes =
-          jsonService.searchModules('cam').map((r) => r.node.name).toSet();
+      final vcdNodes = vcdService
+          .searchOccurrences('cam')
+          .map((r) => r.occurrence.name)
+          .toSet();
+      final jsonNodes = jsonService
+          .searchOccurrences('cam')
+          .map((r) => r.occurrence.name)
+          .toSet();
       expect(vcdNodes, isNotEmpty);
       expect(vcdNodes, jsonNodes);
     });
@@ -282,6 +273,13 @@ void main() {
       final hit = _resolve(rewrapped, 'Abcd/lab/cam/hit');
       expect(hit, isNotNull);
       expect(hit!.name, 'hit');
+    });
+  });
+
+  group('BaseHierarchyAdapter.root', () {
+    test('throws StateError when root is not set', () {
+      final adapter = _UnsetAdapter();
+      expect(() => adapter.root, throwsStateError);
     });
   });
 }
