@@ -87,7 +87,7 @@ class OccurrenceAddress {
   /// `"Top.counter.clk"`) to a [OccurrenceAddress] by walking [root].
   ///
   /// Supports both `/` and `.` as separators.  If the first segment
-  /// matches [root]'s name (case-insensitive), it is skipped — the root
+  /// matches [root]'s name, it is skipped — the root
   /// occurrence is always at the empty address.
   ///
   /// The last segment is first tried as a **signal** name within the
@@ -117,9 +117,7 @@ class OccurrenceAddress {
 
     // Skip leading segment that matches the root name.
     final segments =
-        parts.isNotEmpty && parts.first.toLowerCase() == root.name.toLowerCase()
-            ? parts.skip(1)
-            : parts;
+        parts.isNotEmpty && parts.first == root.name ? parts.skip(1) : parts;
 
     ({HierarchyOccurrence node, OccurrenceAddress addr})? step(
       ({HierarchyOccurrence node, OccurrenceAddress addr})? cur,

@@ -52,8 +52,8 @@ void main() {
       expect(s!.path(), 'abcd/clk');
     });
 
-    test('resolves case-insensitively', () {
-      final s = resolve('Abcd.CLK');
+    test('resolves with exact case', () {
+      final s = resolve('abcd.clk');
       expect(s, isNotNull);
       expect(s!.path(), 'abcd/clk');
     });

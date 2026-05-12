@@ -12,7 +12,7 @@ import 'package:rohd_hierarchy/src/hierarchy_query.dart';
 /// Prefix-substring query: segments are matched via `startsWith` (signals)
 /// or `contains` (occurrences) at successive hierarchy depths.
 class PrefixQuery extends HierarchyQuery {
-  /// Lower-cased, non-empty segments parsed from the raw query.
+  /// Non-empty segments parsed from the raw query.
   late final List<String> segments;
 
   /// Create a prefix query from [rawQuery].
@@ -22,7 +22,6 @@ class PrefixQuery extends HierarchyQuery {
   }) : super(crossesBoundaries: false) {
     segments = rawQuery
         .replaceAll('.', '/')
-        .toLowerCase()
         .split('/')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
@@ -37,7 +36,7 @@ class PrefixQuery extends HierarchyQuery {
     if (stateIndex >= segments.length) {
       return {stateIndex};
     }
-    final name = occurrenceName.toLowerCase();
+    final name = occurrenceName;
     if (name.contains(segments[stateIndex])) {
       return {stateIndex + 1};
     }
@@ -53,7 +52,7 @@ class PrefixQuery extends HierarchyQuery {
     if (stateIndex != segments.length - 1) {
       return false;
     }
-    return signalName.toLowerCase().startsWith(segments[stateIndex]);
+    return signalName.startsWith(segments[stateIndex]);
   }
 
   @override

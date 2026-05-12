@@ -85,7 +85,7 @@ class RegexQuery extends HierarchyQuery {
         return RegexSegment.globStar();
       }
       final pattern = _globToRegex(s);
-      return RegexSegment(RegExp('^$pattern\$', caseSensitive: false));
+      return RegexSegment(RegExp('^$pattern\$'));
     }).toList();
   }
 

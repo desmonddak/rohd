@@ -168,7 +168,7 @@ abstract mixin class HierarchyService {
   /// Check if an occurrence or any of its descendants match [searchTerm].
   ///
   /// The search term is split on `/` or `.` into hierarchical segments.
-  /// Each segment is matched case-insensitively via substring containment
+  /// Each segment is matched via substring containment
   /// against occurrence names at successive depths.
   ///
   /// Returns `true` if [searchTerm] is null/empty, or if the occurrence
@@ -184,7 +184,6 @@ abstract mixin class HierarchyService {
 
     final normalizedQuery = searchTerm.replaceAll('.', '/');
     final queryParts = normalizedQuery
-        .toLowerCase()
         .split('/')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
@@ -200,7 +199,7 @@ abstract mixin class HierarchyService {
     }
 
     final currentQueryPart = queryParts[queryIdx];
-    final nodeName = node.name.toLowerCase();
+    final nodeName = node.name;
 
     final matched = nodeName.contains(currentQueryPart);
     final nextQueryIdx = matched ? queryIdx + 1 : queryIdx;
@@ -286,12 +285,10 @@ abstract mixin class HierarchyService {
     for (final seg in navParts) {
       // If the segment matches the current node name, stay at this level
       // (handles the root name appearing as the first path segment).
-      if (current.name.toLowerCase() == seg) {
+      if (current.name == seg) {
         continue;
       }
-      final child = current.children
-          .where((c) => c.name.toLowerCase() == seg)
-          .firstOrNull;
+      final child = current.children.where((c) => c.name == seg).firstOrNull;
       if (child == null) {
         return const [];
       }
@@ -300,8 +297,7 @@ abstract mixin class HierarchyService {
     }
 
     // The trailing prefix to filter on (empty if path ends with separator).
-    final prefix =
-        (endsWithSep || parts.isEmpty) ? '' : parts.last.toLowerCase();
+    final prefix = (endsWithSep || parts.isEmpty) ? '' : parts.last;
 
     final suggestions = <String>[];
 
@@ -311,7 +307,7 @@ abstract mixin class HierarchyService {
     if (prefix.isNotEmpty &&
         completedParts.length == 1 &&
         current == root &&
-        current.name.toLowerCase().startsWith(prefix)) {
+        current.name.startsWith(prefix)) {
       final rootPath = current.name;
       suggestions.add(current.children.isNotEmpty
           ? '$rootPath$_hierarchySeparator'
@@ -319,7 +315,7 @@ abstract mixin class HierarchyService {
     }
 
     for (final child in current.children) {
-      if (prefix.isEmpty || child.name.toLowerCase().startsWith(prefix)) {
+      if (prefix.isEmpty || child.name.startsWith(prefix)) {
         final path = [...completedParts, child.name].join(_hierarchySeparator);
         suggestions.add(
             child.children.isNotEmpty ? '$path$_hierarchySeparator' : path);
@@ -354,7 +350,7 @@ abstract mixin class HierarchyService {
   /// Search for signals whose hierarchical path matches a regex [pattern].
   ///
   /// The pattern is split on `/` or `.` into segments.  Each segment is
-  /// compiled as a case-insensitive [RegExp] and matched against the
+  /// compiled as a [RegExp] and matched against the
   /// corresponding depth in the hierarchy tree.  Special segments:
   ///
   /// - `**` — matches zero or more hierarchy levels (glob-star).  Use this
@@ -421,7 +417,7 @@ abstract mixin class HierarchyService {
 
   /// Returns the longest common prefix shared by all [paths].
   ///
-  /// Comparison is case-insensitive.  Returns `null` when [paths] is empty
+  /// Comparison is case-sensitive.  Returns `null` when [paths] is empty
   /// or no common prefix exists.
   static String? longestCommonPrefix(List<String> paths) {
     if (paths.isEmpty) {
@@ -432,9 +428,8 @@ abstract mixin class HierarchyService {
         return null;
       }
       final end = pre.length < s.length ? pre.length : s.length;
-      final j = Iterable<int>.generate(end)
-          .takeWhile((i) => pre[i].toLowerCase() == s[i].toLowerCase())
-          .length;
+      final j =
+          Iterable<int>.generate(end).takeWhile((i) => pre[i] == s[i]).length;
       return j > 0 ? pre.substring(0, j) : null;
     });
     return prefix;
@@ -442,10 +437,9 @@ abstract mixin class HierarchyService {
 
   // ─────────────────── Private helpers ───────────────────
 
-  /// Split a query or path on `/` or `.` into non-empty lower-case segments.
+  /// Split a query or path on `/` or `.` into non-empty segments.
   static List<String> _splitPath(String input) => input
       .replaceAll('.', _hierarchySeparator)
-      .toLowerCase()
       .split(_hierarchySeparator)
       .map((s) => s.trim())
       .where((s) => s.isNotEmpty)
@@ -504,7 +498,7 @@ abstract mixin class HierarchyService {
     }
 
     // Try matching current node name against current query part
-    final nodeName = node.name.toLowerCase();
+    final nodeName = node.name;
     final currentQuery = qIdx < queryParts.length ? queryParts[qIdx] : null;
     final matched = currentQuery != null && nodeName.startsWith(currentQuery);
     final nextIdx = matched ? qIdx + 1 : qIdx;
@@ -526,8 +520,7 @@ abstract mixin class HierarchyService {
         if (results.length >= limit) {
           return;
         }
-        if (signalQuery.isEmpty ||
-            signal.name.toLowerCase().startsWith(signalQuery)) {
+        if (signalQuery.isEmpty || signal.name.startsWith(signalQuery)) {
           final fullPath =
               [...pathSoFar, signal.name].join(_hierarchySeparator);
           results.add(fullPath);
@@ -569,7 +562,7 @@ abstract mixin class HierarchyService {
     }
 
     // Try matching current node name against current query part
-    final nodeName = node.name.toLowerCase();
+    final nodeName = node.name;
     final currentQuery = qIdx < queryParts.length ? queryParts[qIdx] : null;
     final matched = currentQuery != null && nodeName.contains(currentQuery);
     final nextIdx = matched ? qIdx + 1 : qIdx;
@@ -611,8 +604,8 @@ abstract mixin class HierarchyService {
       return;
     }
 
-    final matched = qIdx < queryParts.length &&
-        node.name.toLowerCase().contains(queryParts[qIdx]);
+    final matched =
+        qIdx < queryParts.length && node.name.contains(queryParts[qIdx]);
     final nextIdx = matched ? qIdx + 1 : qIdx;
 
     if (nextIdx >= queryParts.length) {
@@ -687,7 +680,7 @@ abstract mixin class HierarchyService {
         }
         final pattern = _globToRegex(s);
         // Anchor the regex to match the full name.
-        return _RegexSegment(RegExp('^$pattern\$', caseSensitive: false));
+        return _RegexSegment(RegExp('^$pattern\$'));
       }).toList();
 
   /// Recursive signal search driven by compiled regex segments.

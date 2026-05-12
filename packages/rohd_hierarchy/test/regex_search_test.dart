@@ -261,13 +261,6 @@ void main() {
           ]));
     });
 
-    // ── Case insensitivity ──
-
-    test('search is case-insensitive', () {
-      final results = hierarchy.searchSignalPathsRegex('top/cpu/alu/RESULT');
-      expect(results, contains('Top/CPU/ALU/result'));
-    });
-
     // ── Module search ──
 
     test('searchOccurrencePathsRegex finds modules', () {
@@ -494,8 +487,8 @@ void main() {
     });
 
     test('searchOccurrences with glob pattern finds modules', () {
-      // Pattern: *mux* should find MuxUnit (auto-prepended with */)
-      final results = hierarchy.searchOccurrences('*mux*');
+      // Pattern: *Mux* should find MuxUnit (auto-prepended with **/)
+      final results = hierarchy.searchOccurrences('*Mux*');
       expect(results, isNotEmpty,
           reason:
               'searchOccurrences should dispatch to regex for glob patterns');
@@ -503,7 +496,7 @@ void main() {
     });
 
     test('searchOccurrences with ** finds deep modules', () {
-      final results = hierarchy.searchOccurrences('**/*mux*');
+      final results = hierarchy.searchOccurrences('**/*Mux*');
       expect(results, isNotEmpty);
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });
@@ -533,7 +526,7 @@ void main() {
 
     test('searchOccurrences without regex uses plain matching', () {
       // Plain query without glob chars uses substring matching
-      final results = hierarchy.searchOccurrences('mux');
+      final results = hierarchy.searchOccurrences('Mux');
       expect(results, isNotEmpty);
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });

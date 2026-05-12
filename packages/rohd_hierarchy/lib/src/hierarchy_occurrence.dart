@@ -91,24 +91,23 @@ class HierarchyOccurrence {
   Map<String, int>? _signalNameIndex;
 
   /// Return the offset (index) of the child with [name] in [children],
-  /// or -1 if not found.  Case-insensitive.
+  /// or -1 if not found.  Case-sensitive.
   /// O(1) after first call (lazily builds index).
   int childIndexByName(String name) {
     _childNameIndex ??= {
-      for (var i = 0; i < children.length; i++)
-        children[i].name.toLowerCase(): i,
+      for (var i = 0; i < children.length; i++) children[i].name: i,
     };
-    return _childNameIndex![name.toLowerCase()] ?? -1;
+    return _childNameIndex![name] ?? -1;
   }
 
   /// Return the offset (index) of the signal with [name] in [signals],
-  /// or -1 if not found.  Case-insensitive.
+  /// or -1 if not found.  Case-sensitive.
   /// O(1) after first call (lazily builds index).
   int signalIndexByName(String name) {
     _signalNameIndex ??= {
-      for (var i = 0; i < signals.length; i++) signals[i].name.toLowerCase(): i,
+      for (var i = 0; i < signals.length; i++) signals[i].name: i,
     };
-    return _signalNameIndex![name.toLowerCase()] ?? -1;
+    return _signalNameIndex![name] ?? -1;
   }
 
   /// Whether [cellType] represents a netlist built-in primitive cell type.

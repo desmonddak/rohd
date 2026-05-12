@@ -131,7 +131,7 @@ abstract class HierarchyQuery {
   /// Create a **prefix-substring** query.
   ///
   /// The query is split on `/` or `.` into segments.  Each segment is
-  /// matched case-insensitively via `startsWith` (for signals) or
+  /// matched via `startsWith` (for signals) or
   /// `contains` (for occurrences) against names at successive depths.
   factory HierarchyQuery.prefix(
     String rawQuery, {
@@ -141,7 +141,7 @@ abstract class HierarchyQuery {
   /// Create a **regex/glob** query.
   ///
   /// Segments are separated by `/`.  Each segment is compiled as a
-  /// case-insensitive regex anchored to the full name.  The special
+  /// case-sensitive regex anchored to the full name.  The special
   /// segment `**` matches zero or more hierarchy levels.
   ///
   /// Glob wildcards `*` and `?` are auto-converted to regex equivalents.

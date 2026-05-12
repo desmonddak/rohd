@@ -302,9 +302,9 @@ void main() {
       expect(HierarchyService.longestCommonPrefix(['abc', 'xyz']), isNull);
     });
 
-    test('longestCommonPrefix is case-insensitive', () {
+    test('longestCommonPrefix is case-sensitive', () {
       final prefix =
-          HierarchyService.longestCommonPrefix(['Filter/abc', 'filter/abd']);
+          HierarchyService.longestCommonPrefix(['Filter/abc', 'Filter/abd']);
       expect(prefix, 'Filter/ab');
     });
   });

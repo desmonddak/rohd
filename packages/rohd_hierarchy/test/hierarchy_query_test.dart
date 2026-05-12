@@ -184,11 +184,10 @@ void main() {
 
   group('PrefixQuery', () {
     group('matchOccurrence', () {
-      test('matches occurrence name containing segment (case-insensitive)', () {
+      test('matches occurrence name containing segment', () {
         final q = PrefixQuery('cpu');
         // 'cpu0' contains 'cpu'
         expect(q.matchOccurrence('cpu0', 0), equals({1}));
-        expect(q.matchOccurrence('CPU0', 0), equals({1}));
       });
 
       test('returns empty set when no match', () {
@@ -290,8 +289,8 @@ void main() {
         expect(q.matchOccurrence('cpu1', 1), isEmpty);
       });
 
-      test('case insensitive', () {
-        final q = RegexQuery('soc/CPU0');
+      test('case sensitive', () {
+        final q = RegexQuery('SoC/cpu0');
         expect(q.matchOccurrence('SoC', 0), equals({1}));
         expect(q.matchOccurrence('cpu0', 1), equals({2}));
       });

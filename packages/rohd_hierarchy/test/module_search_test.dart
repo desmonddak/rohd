@@ -67,21 +67,21 @@ void main() {
     });
 
     test('searchNodePaths finds CPU module', () {
-      final results = hierarchy.searchOccurrencePaths('cpu');
+      final results = hierarchy.searchOccurrencePaths('CPU');
       expect(results, isNotEmpty,
           reason: 'Should find CPU module by simple name');
       expect(results.any((path) => path.contains('CPU')), isTrue);
     });
 
     test('searchNodePaths finds ALU with hierarchical query', () {
-      final results = hierarchy.searchOccurrencePaths('cpu/alu');
+      final results = hierarchy.searchOccurrencePaths('CPU/ALU');
       expect(results, isNotEmpty,
           reason: 'Should find ALU with hierarchical path');
       expect(results.any((path) => path.contains('ALU')), isTrue);
     });
 
     test('searchNodePaths works with dot notation', () {
-      final results = hierarchy.searchOccurrencePaths('top.cpu.alu');
+      final results = hierarchy.searchOccurrencePaths('Top.CPU.ALU');
       expect(results, isNotEmpty, reason: 'Should find ALU with dot notation');
       expect(results.any((path) => path.contains('Top/CPU/ALU')), isTrue);
     });
@@ -93,7 +93,7 @@ void main() {
     });
 
     test('searchModules returns ModuleSearchResult objects', () {
-      final results = hierarchy.searchOccurrences('memory');
+      final results = hierarchy.searchOccurrences('Memory');
       expect(results, isNotEmpty);
       expect(results.first, isA<OccurrenceSearchResult>());
       expect(results.first.name, equals('Memory'));
@@ -101,7 +101,7 @@ void main() {
     });
 
     test('searchModules result contains full metadata', () {
-      final results = hierarchy.searchOccurrences('decoder');
+      final results = hierarchy.searchOccurrences('Decoder');
       expect(results, isNotEmpty);
       final result = results.first;
       expect(result.occurrenceId, contains('Decoder'));
@@ -124,7 +124,7 @@ void main() {
 
     test('searchModules finds modules at different depths', () {
       // Should find both Top and Top/CPU
-      final results = hierarchy.searchOccurrences('top');
+      final results = hierarchy.searchOccurrences('Top');
       expect(results.length, greaterThanOrEqualTo(1));
       expect(results.any((r) => r.name == 'Top'), isTrue);
     });
@@ -189,41 +189,32 @@ void main() {
     });
 
     test('single segment matches at any level', () {
-      final results = hierarchy.searchOccurrencePaths('multiplier');
+      final results = hierarchy.searchOccurrencePaths('Multiplier');
       expect(results, isNotEmpty,
           reason: 'Should find Multiplier even without full path');
       expect(results.any((r) => r.endsWith('Multiplier')), isTrue);
     });
 
     test('two segment path matches correctly', () {
-      final results = hierarchy.searchOccurrencePaths('datapath/multiplier');
+      final results = hierarchy.searchOccurrencePaths('DataPath/Multiplier');
       expect(results.any((r) => r.contains('DataPath/Multiplier')), isTrue,
           reason: 'Should find Multiplier under DataPath');
     });
 
     test('full hierarchical path matches precisely', () {
       final results =
-          hierarchy.searchOccurrencePaths('processingunit/datapath/adder');
+          hierarchy.searchOccurrencePaths('ProcessingUnit/DataPath/Adder');
       expect(results.any((r) => r.contains('ProcessingUnit/DataPath/Adder')),
           isTrue,
           reason: 'Should find Adder with full hierarchical path');
     });
 
-    test('case insensitive matching works', () {
-      final resultsLower = hierarchy.searchOccurrencePaths('MULTIPLIER');
-      final resultsUpper = hierarchy.searchOccurrencePaths('multiplier');
-      expect(resultsLower, isNotEmpty);
-      expect(resultsUpper, isNotEmpty);
-      expect(resultsLower.length, equals(resultsUpper.length),
-          reason: 'Case should not affect matching');
-    });
-
     test('partial name matching works', () {
-      final results1 = hierarchy.searchOccurrencePaths('path');
+      final results1 = hierarchy.searchOccurrencePaths('Path');
       expect(results1.any((r) => r.contains('DataPath')), isTrue,
           reason: 'Should match partial "path" in DataPath');
 
-      final results2 = hierarchy.searchOccurrencePaths('unit');
+      final results2 = hierarchy.searchOccurrencePaths('Unit');
       expect(results2.any((r) => r.contains('ProcessingUnit')), isTrue,
           reason: 'Should match partial "unit" in ProcessingUnit');
     });
