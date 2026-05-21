@@ -146,7 +146,7 @@ class HierarchyOccurrence {
 
   /// Finds the sub-field [SignalOccurrence] entries for a struct/array signal.
   ///
-  /// Given a [parentSignal] that has [logicType] metadata (struct fields or
+  /// Given a `parentSignal` that has `logicType` metadata (struct fields or
   /// array dims), looks up the expected sub-field signal names in this
   /// occurrence's signal list using the Namer/Sanitizer naming convention:
   ///   `{parentSignalName}_{fieldName}`
@@ -157,7 +157,9 @@ class HierarchyOccurrence {
   List<({SignalOccurrence? signal, String fieldLabel, int width, int startBit})>
       findSubFieldSignals(SignalOccurrence parentSignal) {
     final descriptors = parentSignal.subFieldDescriptors;
-    if (descriptors.isEmpty) return const [];
+    if (descriptors.isEmpty) {
+      return const [];
+    }
 
     return descriptors.map((d) {
       final idx = signalIndexByName(d.expectedName);

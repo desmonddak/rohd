@@ -144,13 +144,13 @@ class SignalOccurrence {
   /// produces sub-field signal names: `fp_mantissa`, `fp_exponent`, `fp_sign`.
   ///
   /// These become separate [SignalOccurrence] entries in the same parent
-  /// module.  Use [findSubFieldSignals] on [HierarchyOccurrence] to look
+  /// module.  Use `HierarchyOccurrence.findSubFieldSignals` to look
   /// them up.
   ///
   /// Returns a list of `(expectedName, fieldLabel, width, startBit,
-  /// subLogicType)` for direct children.  [expectedName] follows the
+  /// subLogicType)` for direct children.  `expectedName` follows the
   /// `{parentSignalName}_{fieldName}` convention.
-  /// [subLogicType] is non-null when the child is itself a sub-array
+  /// `subLogicType` is non-null when the child is itself a sub-array
   /// (remaining dimensions) and can be further expanded.
   /// Empty if this is not a struct/array with known sub-fields.
   List<
@@ -161,7 +161,9 @@ class SignalOccurrence {
         int startBit,
         Map<String, Object?>? subLogicType,
       })> get subFieldDescriptors {
-    if (logicType == null) return const [];
+    if (logicType == null) {
+      return const [];
+    }
     return subFieldDescriptorsForType(logicType!, name);
   }
 
