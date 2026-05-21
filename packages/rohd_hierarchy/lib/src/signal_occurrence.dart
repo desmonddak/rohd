@@ -59,6 +59,27 @@ class SignalOccurrence {
   /// across incremental hierarchy expansion.
   final int? portIndex;
 
+  /// Type metadata from the netlist `logic_type` JSON field.
+  ///
+  /// For a **LogicStructure** (non-array), the format is:
+  /// ```json
+  /// {"typeName": "FloatingPoint", "fields": [
+  ///   {"name": "mantissa", "width": 4, "bits": [0,1,2,3]},
+  ///   {"name": "exponent", "width": 4, "bits": [4,5,6,7]},
+  ///   {"name": "sign", "width": 1, "bits": [8]}
+  /// ]}
+  /// ```
+  ///
+  /// For a **LogicArray**, the format is:
+  /// ```json
+  /// {"width": 80, "arrayDims": [10], "elementWidth": 8}
+  /// ```
+  ///
+  /// For a plain signal: `{"width": N}` or `null`.
+  ///
+  /// Nested structs have a recursive `"type"` key in their field entries.
+  Map<String, dynamic>? logicType;
+
   /// Hierarchical address for this signal. Assigned by
   /// [HierarchyOccurrence.buildAddresses] to enable efficient navigation.
   /// Format: [...occurrenceIndices, signalIndex]
@@ -86,7 +107,140 @@ class SignalOccurrence {
     this.value,
     this.isComputed = false,
     this.portIndex,
+    this.logicType,
   });
+
+  /// Whether this signal is a LogicStructure (has named sub-fields).
+  bool get isStruct => logicType != null && logicType!.containsKey('fields');
+
+  /// Whether this signal is a LogicArray (has indexed elements).
+  bool get isArray => logicType != null && logicType!.containsKey('arrayDims');
+
+  /// The struct type name (e.g. "FloatingPoint"), or null if not a struct.
+  String? get typeName => logicType?['typeName'] as String?;
+
+  /// The struct field descriptors, or empty list if not a struct.
+  ///
+  /// Each field is `{"name": ..., "width": ..., "bits": [...]}` with an
+  /// optional `"type"` key for nested structs/arrays.
+  List<Map<String, dynamic>> get structFields =>
+      (logicType?['fields'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
+      const [];
+
+  /// Array dimensions (e.g. `[10]` for 1D, `[10, 2]` for 2D), or null.
+  List<int>? get arrayDims =>
+      (logicType?['arrayDims'] as List<dynamic>?)?.cast<int>();
+
+  /// Element width for arrays, or null if not an array.
+  int? get arrayElementWidth => logicType?['elementWidth'] as int?;
+
+  /// Returns the expected sub-field signal names derived from [logicType].
+  ///
+  /// For structs, the synthesizer creates separate netnames for each field
+  /// following the Namer/Sanitizer conventions:
+  ///   `Sanitizer.sanitizeSV(structureName)` → `{parentName}_{fieldName}`
+  ///
+  /// For example, signal `fp` with fields `mantissa`, `exponent`, `sign`
+  /// produces sub-field signal names: `fp_mantissa`, `fp_exponent`, `fp_sign`.
+  ///
+  /// These become separate [SignalOccurrence] entries in the same parent
+  /// module.  Use [findSubFieldSignals] on [HierarchyOccurrence] to look
+  /// them up.
+  ///
+  /// Returns a list of `(expectedName, fieldLabel, width, startBit,
+  /// subLogicType)` for direct children.  [expectedName] follows the
+  /// `{parentSignalName}_{fieldName}` convention.
+  /// [subLogicType] is non-null when the child is itself a sub-array
+  /// (remaining dimensions) and can be further expanded.
+  /// Empty if this is not a struct/array with known sub-fields.
+  List<
+      ({
+        String expectedName,
+        String fieldLabel,
+        int width,
+        int startBit,
+        Map<String, Object?>? subLogicType,
+      })> get subFieldDescriptors {
+    if (logicType == null) return const [];
+    return subFieldDescriptorsForType(logicType!, name);
+  }
+
+  /// Compute sub-field descriptors for an arbitrary [logicType] map.
+  ///
+  /// [parentName] is used to derive expected signal names.
+  /// This is static so it can be called recursively for nested arrays
+  /// without needing a full [SignalOccurrence].
+  static List<
+      ({
+        String expectedName,
+        String fieldLabel,
+        int width,
+        int startBit,
+        Map<String, Object?>? subLogicType,
+      })> subFieldDescriptorsForType(
+    Map<String, Object?> logicType,
+    String parentName,
+  ) {
+    final fields = logicType['fields'] as List<dynamic>?;
+    if (fields != null) {
+      return fields.map((f) {
+        final field = f as Map<String, dynamic>;
+        final fieldName = field['name'] as String? ?? '?';
+        final width = field['width'] as int? ?? 1;
+        final bits = field['bits'] as List<dynamic>?;
+        final startBit = bits != null && bits.isNotEmpty
+            ? (bits.cast<int>().reduce((a, b) => a < b ? a : b))
+            : 0;
+        // Naming convention: Sanitizer.sanitizeSV("$parentName.$fieldName")
+        // which produces "$parentName_$fieldName"
+        final expectedName = '${parentName}_$fieldName';
+        return (
+          expectedName: expectedName,
+          fieldLabel: fieldName,
+          width: width,
+          startBit: startBit,
+          subLogicType: field['type'] as Map<String, Object?>?,
+        );
+      }).toList();
+    }
+
+    final arrayDims = logicType['arrayDims'] as List<dynamic>?;
+    if (arrayDims != null && arrayDims.isNotEmpty) {
+      final leafWidth = (logicType['elementWidth'] as int?) ?? 1;
+      final outerDim = arrayDims.first as int;
+      // For multi-dimensional arrays, each outer element spans all
+      // remaining dimensions times the leaf element width.
+      final remainingDims =
+          arrayDims.length > 1 ? arrayDims.sublist(1).cast<int>() : <int>[];
+      final elementWidth = remainingDims.isEmpty
+          ? leafWidth
+          : remainingDims.fold<int>(leafWidth, (acc, d) => acc * d);
+
+      // Build sub-logicType for remaining dimensions (if any).
+      final subLogicType = remainingDims.isEmpty
+          ? null
+          : <String, Object?>{
+              'width': elementWidth,
+              'arrayDims': remainingDims,
+              'elementWidth': leafWidth,
+            };
+
+      return List.generate(outerDim, (i) {
+        // Naming convention: Sanitizer.sanitizeSV("$parentName[$i]")
+        // which produces "$parentName_${i}_"
+        final expectedName = '${parentName}_${i}_';
+        return (
+          expectedName: expectedName,
+          fieldLabel: '[$i]',
+          width: elementWidth,
+          startBit: i * elementWidth,
+          subLogicType: subLogicType,
+        );
+      });
+    }
+
+    return const [];
+  }
 
   /// Compute the full hierarchical path for this signal.
   ///

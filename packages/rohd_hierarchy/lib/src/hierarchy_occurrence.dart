@@ -144,6 +144,33 @@ class HierarchyOccurrence {
   /// Number of port signals in this occurrence.
   int get portCount => signals.where((s) => s.isPort).length;
 
+  /// Finds the sub-field [SignalOccurrence] entries for a struct/array signal.
+  ///
+  /// Given a [parentSignal] that has [logicType] metadata (struct fields or
+  /// array dims), looks up the expected sub-field signal names in this
+  /// occurrence's signal list using the Namer/Sanitizer naming convention:
+  ///   `{parentSignalName}_{fieldName}`
+  ///
+  /// Returns a list of resolved sub-field signals in field order.
+  /// Entries may be null if a particular sub-field signal wasn't found
+  /// (e.g. the netlist didn't emit it, or it was optimized away).
+  List<({SignalOccurrence? signal, String fieldLabel, int width, int startBit})>
+      findSubFieldSignals(SignalOccurrence parentSignal) {
+    final descriptors = parentSignal.subFieldDescriptors;
+    if (descriptors.isEmpty) return const [];
+
+    return descriptors.map((d) {
+      final idx = signalIndexByName(d.expectedName);
+      final sig = idx >= 0 ? signals[idx] : null;
+      return (
+        signal: sig,
+        fieldLabel: d.fieldLabel,
+        width: d.width,
+        startBit: d.startBit,
+      );
+    }).toList();
+  }
+
   /// Collect all signals under this occurrence in depth-first order.
   ///
   /// Visits this occurrence's [signals] first, then recurses into

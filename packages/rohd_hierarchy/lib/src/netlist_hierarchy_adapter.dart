@@ -106,11 +106,13 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
           final p = kv.value as Map<String, dynamic>;
           final dir = p['direction']?.toString() ?? 'inout';
           final bits = (p['bits'] as List?)?.length ?? 0;
+          final logicType = p['logic_type'] as Map<String, dynamic>?;
           return SignalOccurrence(
             name: kv.key,
             direction: dir,
             width: bits > 0 ? bits : 1,
             portIndex: idx,
+            logicType: logicType,
           );
         }),
     ];
@@ -136,10 +138,12 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
         final attrs = netData['attributes'] as Map<String, dynamic>?;
         final isComputed =
             attrs?['computed'] == 1 || attrs?['computed'] == true;
+        final logicType = netData['logic_type'] as Map<String, dynamic>?;
         return SignalOccurrence(
           name: entry.key,
           width: bits > 0 ? bits : 1,
           isComputed: isComputed,
+          logicType: logicType,
         );
       }));
     }
