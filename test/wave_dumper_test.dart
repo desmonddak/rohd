@@ -74,14 +74,17 @@ void main() {
     final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+      equals(true),
+    );
 
     deleteTemporaryDump(dumpName);
   });
@@ -103,17 +106,21 @@ void main() {
     final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 1, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 1, LogicValue.ofString('1')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 20, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 20, LogicValue.ofString('1')),
+      equals(true),
+    );
 
     deleteTemporaryDump(dumpName);
   });
@@ -145,17 +152,21 @@ void main() {
     final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('0')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('0')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 35, LogicValue.ofString('0')),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 35, LogicValue.ofString('0')),
+      equals(true),
+    );
 
     deleteTemporaryDump(dumpName);
   });
@@ -176,11 +187,13 @@ void main() {
     final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofInt(0x5a, 8)),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofInt(0x5a, 8)),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofInt(0xa5, 8)),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofInt(0xa5, 8)),
+      equals(true),
+    );
 
     deleteTemporaryDump(dumpName);
   });
@@ -201,13 +214,23 @@ void main() {
     final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(
-        VcdParser.confirmValue(
-            vcdContents, 'a', 0, LogicValue.ofString('01xzzx10')),
-        equals(true));
+      VcdParser.confirmValue(
+        vcdContents,
+        'a',
+        0,
+        LogicValue.ofString('01xzzx10'),
+      ),
+      equals(true),
+    );
     expect(
-        VcdParser.confirmValue(
-            vcdContents, 'a', 10, LogicValue.ofString('0x0x1z1z')),
-        equals(true));
+      VcdParser.confirmValue(
+        vcdContents,
+        'a',
+        10,
+        LogicValue.ofString('0x0x1z1z'),
+      ),
+      equals(true),
+    );
 
     deleteTemporaryDump(dumpName);
   });
@@ -245,6 +268,8 @@ void main() {
 
     expect(File(waveDumper.outputPath).existsSync(), equals(true));
 
+    await Simulator.run();
+
     if (File(waveDumper.outputPath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
@@ -277,16 +302,21 @@ void main() {
 
     // reset is 0 initially
     expect(
-        VcdParser.confirmValue(vcdContents, 'asyncReset', 1, LogicValue.zero),
-        equals(true));
+      VcdParser.confirmValue(vcdContents, 'asyncReset', 1, LogicValue.zero),
+      equals(true),
+    );
 
     // 1 after first clock edge
-    expect(VcdParser.confirmValue(vcdContents, 'val', 6, LogicValue.one),
-        equals(true));
+    expect(
+      VcdParser.confirmValue(vcdContents, 'val', 6, LogicValue.one),
+      equals(true),
+    );
 
     // 0 after async reset
-    expect(VcdParser.confirmValue(vcdContents, 'val', 14, LogicValue.zero),
-        equals(true));
+    expect(
+      VcdParser.confirmValue(vcdContents, 'val', 14, LogicValue.zero),
+      equals(true),
+    );
 
     deleteTemporaryDump(dumpName);
   });
