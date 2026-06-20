@@ -7,7 +7,6 @@ import '../../chapter_3/answers/helper.dart';
 import '../../chapter_5/answers/full_subtractor.dart';
 
 class FullSubtractorComb extends FullSubtractor {
-  @override
   FullSubtractorComb(super.a, super.b, super.borrowIn) {
     // Declare input and output
     final a = input('a');
@@ -19,39 +18,19 @@ class FullSubtractorComb extends FullSubtractor {
     final borrowOut = addOutput('borrow_comb');
 
     Combinational([
-      Case([a, b, borrow].swizzle(), [
-        CaseItem(Const(bin('000'), width: 3), [
-          diff < 0,
-          borrowOut < 0,
-        ]),
-        CaseItem(Const(bin('001'), width: 3), [
-          diff < 1,
-          borrowOut < 1,
-        ]),
-        CaseItem(Const(bin('010'), width: 3), [
-          diff < 1,
-          borrowOut < 1,
-        ]),
-        CaseItem(Const(bin('011'), width: 3), [
-          diff < 0,
-          borrowOut < 1,
-        ]),
-        CaseItem(Const(bin('100'), width: 3), [
-          diff < 1,
-          borrowOut < 0,
-        ]),
-        CaseItem(Const(bin('101'), width: 3), [
-          diff < 0,
-          borrowOut < 0,
-        ]),
-        CaseItem(Const(bin('110'), width: 3), [
-          diff < 0,
-          borrowOut < 0,
-        ])
-      ], defaultItem: [
-        diff < 1,
-        borrowOut < 1
-      ])
+      Case(
+        [a, b, borrow].swizzle(),
+        [
+          CaseItem(Const(bin('000'), width: 3), [diff < 0, borrowOut < 0]),
+          CaseItem(Const(bin('001'), width: 3), [diff < 1, borrowOut < 1]),
+          CaseItem(Const(bin('010'), width: 3), [diff < 1, borrowOut < 1]),
+          CaseItem(Const(bin('011'), width: 3), [diff < 0, borrowOut < 1]),
+          CaseItem(Const(bin('100'), width: 3), [diff < 1, borrowOut < 0]),
+          CaseItem(Const(bin('101'), width: 3), [diff < 0, borrowOut < 0]),
+          CaseItem(Const(bin('110'), width: 3), [diff < 0, borrowOut < 0]),
+        ],
+        defaultItem: [diff < 1, borrowOut < 1],
+      ),
     ]);
   }
 
@@ -92,41 +71,49 @@ class NBitFullSubtractor extends Module {
 
 Future<void> main() async {
   group('Full Subtractor', () {
-    test('should return True when cas conditionals matched truth table',
-        () async {
-      final a = Logic();
-      final b = Logic();
-      final bIn = Logic();
+    test(
+      'should return True when cas conditionals matched truth table',
+      () async {
+        final a = Logic();
+        final b = Logic();
+        final bIn = Logic();
 
-      final fsComb = FullSubtractorComb(a, b, bIn);
-      await fsComb.build();
+        final fsComb = FullSubtractorComb(a, b, bIn);
+        await fsComb.build();
 
-      for (var i = 0; i <= 1; i++) {
-        for (var j = 0; j <= 1; j++) {
-          for (var k = 0; k <= 1; k++) {
-            a.put(i);
-            b.put(j);
-            bIn.put(k);
+        for (var i = 0; i <= 1; i++) {
+          for (var j = 0; j <= 1; j++) {
+            for (var k = 0; k <= 1; k++) {
+              a.put(i);
+              b.put(j);
+              bIn.put(k);
 
-            final res = fsTruthTable(i, j, k);
+              final res = fsTruthTable(i, j, k);
 
-            final actualDiff = fsComb.fsResult.diff.value.toInt();
-            final actualBOut = fsComb.fsResult.borrow.value.toInt();
+              final actualDiff = fsComb.fsResult.diff.value.toInt();
+              final actualBOut = fsComb.fsResult.borrow.value.toInt();
 
-            final expectedDiff = res.diff;
-            final expectedBOut = res.borrowOut;
+              final expectedDiff = res.diff;
+              final expectedBOut = res.borrowOut;
 
-            expect(actualDiff, expectedDiff,
+              expect(
+                actualDiff,
+                expectedDiff,
                 reason: 'a: $a, b: $b, bIn: $bIn'
-                    ' actualDiff: $actualDiff, expectedDiff: $expectedDiff');
+                    ' actualDiff: $actualDiff, expectedDiff: $expectedDiff',
+              );
 
-            expect(actualBOut, expectedBOut,
+              expect(
+                actualBOut,
+                expectedBOut,
                 reason: 'a: $a, b: $b, bIn: $bIn'
-                    ' actualBOut: $actualBOut, expectedBOut: $expectedBOut');
+                    ' actualBOut: $actualBOut, expectedBOut: $expectedBOut',
+              );
+            }
           }
         }
-      }
-    });
+      },
+    );
   });
 
   test(
@@ -145,7 +132,10 @@ Future<void> main() async {
     a.put(randA);
     b.put(randB);
 
-    expect(mod.result.value.toInt(), equals(minusResult),
-        reason: 'randA: $randA, randB: $randB, addResult: $minusResult');
+    expect(
+      mod.result.value.toInt(),
+      equals(minusResult),
+      reason: 'randA: $randA, randB: $randB, addResult: $minusResult',
+    );
   });
 }
