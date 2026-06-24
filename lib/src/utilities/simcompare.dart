@@ -622,7 +622,7 @@ abstract class SimCompare {
       final dir = Directory('tmp_test');
       if (dir.existsSync()) {
         for (final entity in dir.listSync()) {
-          final name = entity.uri.pathSegments.last;
+          final name = entity.path.split(Platform.pathSeparator).last;
 
           // Remove only SystemC artifacts owned by this test process. Other
           // test isolates may be compiling or running from the same tmp_test
@@ -657,6 +657,7 @@ abstract class SimCompare {
     String? resetName,
     String? systemcHome,
     String? systemcLib,
+    bool cache = true,
   }) {
     if (kIsWeb) {
       return null;
@@ -676,7 +677,7 @@ abstract class SimCompare {
 
     // Check compilation cache
     final cacheKey = generatedSystemC.hashCode;
-    if (_compilationCache.containsKey(cacheKey)) {
+    if (cache && _compilationCache.containsKey(cacheKey)) {
       final cached = _compilationCache[cacheKey]!;
       if (File(cached.binaryPath).existsSync()) {
         return cached;
@@ -914,7 +915,9 @@ abstract class SimCompare {
       inputPorts: inputPorts,
       outputPorts: outputPorts,
     );
-    _compilationCache[cacheKey] = exe;
+    if (cache) {
+      _compilationCache[cacheKey] = exe;
+    }
     return exe;
   }
 
@@ -1080,13 +1083,20 @@ abstract class SimCompare {
       resetName: resetName,
       systemcHome: systemcHome,
       systemcLib: systemcLib,
+      cache: dontDeleteTmpFiles,
     );
     if (exe == null) {
       // SystemC not available — skip gracefully.
       return;
     }
-    final passed = runSystemCVectors(exe, vectors);
-    expect(passed, true);
+    try {
+      final passed = runSystemCVectors(exe, vectors);
+      expect(passed, true);
+    } finally {
+      if (!dontDeleteTmpFiles) {
+        exe.cleanup();
+      }
+    }
   }
 
   /// Legacy API — returns bool.
@@ -1104,6 +1114,10 @@ abstract class SimCompare {
     if (kIsWeb) {
       return true;
     }
+    if (buildOnly) {
+      module.generateSystemC();
+      return true;
+    }
     final exe = buildSystemCExecutable(
       module,
       moduleName: moduleName,
@@ -1111,14 +1125,18 @@ abstract class SimCompare {
       resetName: resetName,
       systemcHome: systemcHome,
       systemcLib: systemcLib,
+      cache: dontDeleteTmpFiles,
     );
     if (exe == null) {
       return false;
     }
-    if (buildOnly) {
-      return true;
+    try {
+      return runSystemCVectors(exe, vectors);
+    } finally {
+      if (!dontDeleteTmpFiles) {
+        exe.cleanup();
+      }
     }
-    return runSystemCVectors(exe, vectors);
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -1276,10 +1294,9 @@ class SystemCExecutable {
 
     try {
       final compileDir = File(cppFile).parent;
+      final compileDirName = compileDir.path.split(Platform.pathSeparator).last;
       if (compileDir.existsSync() &&
-          compileDir.uri.pathSegments.last.startsWith(
-            SimCompare._systemCTempPrefix,
-          )) {
+          compileDirName.startsWith(SimCompare._systemCTempPrefix)) {
         compileDir.deleteSync(recursive: true);
         return;
       }

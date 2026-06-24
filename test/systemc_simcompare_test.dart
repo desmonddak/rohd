@@ -72,6 +72,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+  tearDownAll(() => SimCompare.cleanupSystemCCache(keepPch: false));
 
   group('SimCompare SystemC', () {
     test('gate module passes vectors', () async {
@@ -112,7 +113,7 @@ void main() {
         Vector({'en': 0, 'reset': 0}, {'val': 5}),
       ];
 
-      SimCompare.checkSystemCVector(mod, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('flip-flop module passes vectors', () async {
@@ -186,7 +187,6 @@ void main() {
           });
           Simulator.setMaxSimTime(120);
         },
-        dontDeleteTmpFiles: true,
       );
       expect(result, isTrue);
     });
