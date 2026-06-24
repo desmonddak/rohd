@@ -32,6 +32,11 @@ const pendingRequests = new Map<number, {
 type RpcHandler = (params: Record<string, unknown>) => Promise<unknown>;
 const methods = new Map<string, RpcHandler>();
 
+const rohdDtdBridgeCapabilities = {
+  rohdDtdBridge: 1,
+  owner: 'rohd-vscode-extension',
+};
+
 function dtdResult(result: Record<string, unknown>): Record<string, unknown> {
   return { type: 'Success', ...result };
 }
@@ -220,6 +225,7 @@ async function connectToDtd(uri: string): Promise<boolean> {
         rpcRequest('registerService', {
           service: 'rohd',
           method: 'goToSource',
+          capabilities: rohdDtdBridgeCapabilities,
         }).then(() => {
           output.appendLine('[DTD] Registered rohd.goToSource service');
         }).catch((err) => {
@@ -229,6 +235,7 @@ async function connectToDtd(uri: string): Promise<boolean> {
         rpcRequest('registerService', {
           service: 'rohd',
           method: 'resolveFrames',
+          capabilities: rohdDtdBridgeCapabilities,
         }).then(() => {
           output.appendLine('[DTD] Registered rohd.resolveFrames service');
         }).catch((err) => {
@@ -238,6 +245,7 @@ async function connectToDtd(uri: string): Promise<boolean> {
         rpcRequest('registerService', {
           service: 'rohd',
           method: 'queryModule',
+          capabilities: rohdDtdBridgeCapabilities,
         }).then(() => {
           output.appendLine('[DTD] Registered rohd.queryModule service');
         }).catch((err) => {
@@ -247,6 +255,7 @@ async function connectToDtd(uri: string): Promise<boolean> {
         rpcRequest('registerService', {
           service: 'rohd',
           method: 'lookupSignal',
+          capabilities: rohdDtdBridgeCapabilities,
         }).then(() => {
           output.appendLine('[DTD] Registered rohd.lookupSignal service');
         }).catch((err) => {
