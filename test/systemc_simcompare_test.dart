@@ -72,7 +72,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
-  tearDownAll(() => SimCompare.cleanupSystemCCache(keepPch: false));
+  tearDownAll(SimCompare.cleanupSystemCCache);
 
   group('SimCompare SystemC', () {
     test('gate module passes vectors', () async {

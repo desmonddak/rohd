@@ -523,8 +523,8 @@ abstract class SimCompare {
   /// Returns the directory containing systemc.h.gch, or null on failure.
   ///
   /// In CI, the PCH is pre-built by `tool/gh_actions/setup_systemc_pch.sh`
-  /// before tests run, so this first looks for the shared CI path. Locally,
-  /// each test process builds its own PCH directory to avoid parallel races.
+  /// before tests run. Locally, tests lazily build the same shared PCH under a
+  /// file lock so parallel test isolates can reuse it without racing.
   static String? _ensurePch(String scHome, String cxxStd) {
     if (_pchPath != null) {
       return _pchPath;
@@ -533,43 +533,57 @@ abstract class SimCompare {
     const dir = 'tmp_test';
     const sharedPchDir = '$dir/pch';
     const sharedGchFile = '$sharedPchDir/systemc.h.gch';
+    const lockFile = '$dir/pch.lock';
 
     // Reuse the CI-prebuilt PCH if available.
     if (File(sharedGchFile).existsSync()) {
       return _pchPath = sharedPchDir;
     }
 
-    final pchDir = '$dir/${_systemCTempPrefix}_pch';
-    final gchFile = '$pchDir/systemc.h.gch';
+    Directory(dir).createSync(recursive: true);
+    RandomAccessFile? lock;
+    try {
+      lock = File(lockFile).openSync(mode: FileMode.append)..lockSync();
 
-    // Reuse if this process already built it on disk.
-    if (File(gchFile).existsSync()) {
-      return _pchPath = pchDir;
-    }
+      if (File(sharedGchFile).existsSync()) {
+        return _pchPath = sharedPchDir;
+      }
 
-    Directory(pchDir).createSync(recursive: true);
+      Directory(sharedPchDir).createSync(recursive: true);
 
-    // Copy the original header next to the .gch so g++ matches them.
-    final pchHeader = '$pchDir/systemc.h';
-    File('$scHome/systemc.h').copySync(pchHeader);
+      // Copy the original header next to the .gch so g++ matches them.
+      const pchHeader = '$sharedPchDir/systemc.h';
+      File('$scHome/systemc.h').copySync(pchHeader);
 
-    final args = [
-      '-std=$cxxStd',
-      '-I$scHome',
-      '-x',
-      'c++-header',
-      '-o',
-      gchFile,
-      pchHeader,
-    ];
-    final result = Process.runSync('g++', args);
-    if (result.exitCode != 0) {
-      print('PCH compilation failed (falling back to normal headers):');
-      print(result.stderr);
+      final args = [
+        '-std=$cxxStd',
+        '-I$scHome',
+        '-x',
+        'c++-header',
+        '-o',
+        sharedGchFile,
+        pchHeader,
+      ];
+      final result = Process.runSync('g++', args);
+      if (result.exitCode != 0) {
+        print('PCH compilation failed (falling back to normal headers):');
+        print(result.stderr);
+        Directory(sharedPchDir).deleteSync(recursive: true);
+        return null;
+      }
+
+      return _pchPath = sharedPchDir;
+    } on Exception catch (e) {
+      print('PCH setup failed (falling back to normal headers): $e');
       return null;
+    } finally {
+      if (lock != null) {
+        try {
+          lock.unlockSync();
+        } on Exception catch (_) {}
+        lock.closeSync();
+      }
     }
-
-    return _pchPath = pchDir;
   }
 
   /// Resolves SystemC home/lib paths. If explicit paths are given, uses them.
@@ -635,6 +649,11 @@ abstract class SimCompare {
           // Remove pch/ directory only when keepPch is false
           if (!keepPch && entity is Directory && entity.path.endsWith('/pch')) {
             entity.deleteSync(recursive: true);
+            continue;
+          }
+
+          if (!keepPch && name == 'pch.lock') {
+            entity.deleteSync();
             continue;
           }
 
