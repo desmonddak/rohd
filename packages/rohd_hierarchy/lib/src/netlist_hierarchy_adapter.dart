@@ -70,11 +70,14 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
     }
 
     // Find top module or default to first
-    final topName = modules.entries
-            .where((e) =>
-                ((e.value as Map<String, dynamic>)['attributes']
-                    as Map<String, dynamic>?)?['top'] ==
-                1)
+    final topName =
+        modules.entries
+            .where(
+              (e) =>
+                  ((e.value as Map<String, dynamic>)['attributes']
+                      as Map<String, dynamic>?)?['top'] ==
+                  1,
+            )
             .map((e) => e.key)
             .firstOrNull ??
         modules.keys.first;
@@ -83,6 +86,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
 
     final rootNode = _parseModule(
       name: resolvedRootName,
+      definition: topName,
       moduleData: modules[topName] as Map<String, dynamic>,
       allModules: modules,
     );
@@ -94,6 +98,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
   /// [HierarchyOccurrence].
   HierarchyOccurrence _parseModule({
     required String name,
+    required String definition,
     required Map<String, dynamic> moduleData,
     required Map<String, dynamic> allModules,
   }) {
@@ -124,28 +129,33 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
     final netsData = moduleData['netnames'] as Map<String, dynamic>?;
     if (netsData != null) {
       final portNames = portsData?.keys.toSet() ?? <String>{};
-      signalsList.addAll(netsData.entries
-          .where((entry) =>
-              !portNames.contains(entry.key) &&
-              !entry.key.startsWith(r'$') &&
-              () {
-                final h = (entry.value as Map<String, dynamic>)['hide_name'];
-                return h != 1 && h != '1';
-              }())
-          .map((entry) {
-        final netData = entry.value as Map<String, dynamic>;
-        final bits = (netData['bits'] as List?)?.length ?? 0;
-        final attrs = netData['attributes'] as Map<String, dynamic>?;
-        final isComputed =
-            attrs?['computed'] == 1 || attrs?['computed'] == true;
-        final logicType = netData['logic_type'] as Map<String, dynamic>?;
-        return SignalOccurrence(
-          name: entry.key,
-          width: bits > 0 ? bits : 1,
-          isComputed: isComputed,
-          logicType: logicType,
-        );
-      }));
+      signalsList.addAll(
+        netsData.entries
+            .where(
+              (entry) =>
+                  !portNames.contains(entry.key) &&
+                  !entry.key.startsWith(r'$') &&
+                  () {
+                    final h =
+                        (entry.value as Map<String, dynamic>)['hide_name'];
+                    return h != 1 && h != '1';
+                  }(),
+            )
+            .map((entry) {
+              final netData = entry.value as Map<String, dynamic>;
+              final bits = (netData['bits'] as List?)?.length ?? 0;
+              final attrs = netData['attributes'] as Map<String, dynamic>?;
+              final isComputed =
+                  attrs?['computed'] == 1 || attrs?['computed'] == true;
+              final logicType = netData['logic_type'] as Map<String, dynamic>?;
+              return SignalOccurrence(
+                name: entry.key,
+                width: bits > 0 ? bits : 1,
+                isComputed: isComputed,
+                logicType: logicType,
+              );
+            }),
+      );
     }
 
     // Cells -> submodules or instances
@@ -161,6 +171,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
             !HierarchyOccurrence.isPrimitiveType(cellType)) {
           final childNode = _parseModule(
             name: cellName,
+            definition: cellType,
             moduleData: allModules[cellType] as Map<String, dynamic>,
             allModules: allModules,
           );
@@ -180,7 +191,8 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
                 final (pIdx, kv) = pEntry;
                 final pName = kv.key;
                 final pDir = kv.value.toString();
-                final bits = (connections?[pName] as List?)?.length ??
+                final bits =
+                    (connections?[pName] as List?)?.length ??
                     (portWidths?[pName] as int?) ??
                     1;
                 return SignalOccurrence(
@@ -207,7 +219,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
     // Create the occurrence with children and signals embedded
     return HierarchyOccurrence(
       name: name,
-      definition: name,
+      definition: definition,
       signals: signalsList,
       children: childNodes,
     );

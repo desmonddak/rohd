@@ -38,9 +38,21 @@ void main() {
 
     test('rootNameOverride replaces root node name', () {
       final json = File('test/fixtures/filter_bank.json').readAsStringSync();
-      final custom =
-          NetlistHierarchyAdapter.fromJson(json, rootNameOverride: 'MyDesign');
+      final custom = NetlistHierarchyAdapter.fromJson(
+        json,
+        rootNameOverride: 'MyDesign',
+      );
       expect(custom.root.name, 'MyDesign');
+      expect(custom.root.definition, 'FilterBank');
+    });
+
+    test('child modules preserve definition separately from instance name', () {
+      final controller = service.root.children.firstWhere(
+        (child) => child.name == 'controller_1',
+      );
+
+      expect(controller.name, 'controller_1');
+      expect(controller.definition, 'FilterController');
     });
 
     test('root has expected ports as signals', () {
@@ -57,24 +69,34 @@ void main() {
 
     test('primitive cells are marked isPrimitive', () {
       // array_slice cells in FilterBank are $slice — primitive
-      final sliceCells = service.root.children
-          .where((c) => c.definition != null && c.definition!.startsWith(r'$'));
+      final sliceCells = service.root.children.where(
+        (c) => c.definition != null && c.definition!.startsWith(r'$'),
+      );
       expect(sliceCells, isNotEmpty);
       for (final cell in sliceCells) {
-        expect(cell.isPrimitive, isTrue,
-            reason: '${cell.name} (${cell.definition}) should be primitive');
+        expect(
+          cell.isPrimitive,
+          isTrue,
+          reason: '${cell.name} (${cell.definition}) should be primitive',
+        );
       }
     });
 
     test('primitive cells have port signals from port_directions', () {
       final primitives = service.root.children.where((c) => c.isPrimitive);
       for (final prim in primitives) {
-        expect(prim.signals, isNotEmpty,
-            reason: '${prim.name} should have port signals');
+        expect(
+          prim.signals,
+          isNotEmpty,
+          reason: '${prim.name} should have port signals',
+        );
         // All signals on primitive cells should have a direction
         for (final s in prim.signals) {
-          expect(s.isPort, isTrue,
-              reason: '${prim.name}/${s.name} should be a port');
+          expect(
+            s.isPort,
+            isTrue,
+            reason: '${prim.name}/${s.name} should be a port',
+          );
           expect(s.direction, isNotEmpty);
         }
       }
@@ -82,8 +104,9 @@ void main() {
 
     test('netnames with hide_name=1 are excluded', () {
       // FilterBank has controller_1_loadingPhase with hide_name=1
-      final allSignalNames =
-          service.root.depthFirstSignals().map((s) => s.name);
+      final allSignalNames = service.root.depthFirstSignals().map(
+        (s) => s.name,
+      );
       expect(allSignalNames, isNot(contains('controller_1_loadingPhase')));
     });
 
@@ -100,16 +123,22 @@ void main() {
         return node.children.any(foundComputed);
       }
 
-      expect(foundComputed(service.root), isTrue,
-          reason: 'Should have at least one computed signal');
+      expect(
+        foundComputed(service.root),
+        isTrue,
+        reason: 'Should have at least one computed signal',
+      );
     });
 
     test(r'$-prefixed netnames are excluded', () {
       // Any netname starting with $ should be filtered out
       final allNames = service.root.depthFirstSignals().map((s) => s.name);
       final dollarNames = allNames.where((n) => n.startsWith(r'$'));
-      expect(dollarNames, isEmpty,
-          reason: r'No $-prefixed netnames should appear');
+      expect(
+        dollarNames,
+        isEmpty,
+        reason: r'No $-prefixed netnames should appear',
+      );
     });
   });
 
@@ -211,8 +240,11 @@ void main() {
       // The fixture includes visible non-port netnames like tapMatch0.
       final allSigs = service.root.depthFirstSignals();
       final nonPorts = allSigs.where((s) => !s.isPort).toList();
-      expect(nonPorts, isNotEmpty,
-          reason: 'Should have non-Port internal signals from netnames');
+      expect(
+        nonPorts,
+        isNotEmpty,
+        reason: 'Should have non-Port internal signals from netnames',
+      );
     });
 
     test('SignalOccurrence.toString includes name and width', () {
@@ -288,8 +320,10 @@ void main() {
 
     test('longestCommonPrefix finds shared prefix', () {
       expect(
-        HierarchyService.longestCommonPrefix(
-            ['FilterBank/ch0', 'FilterBank/ch1']),
+        HierarchyService.longestCommonPrefix([
+          'FilterBank/ch0',
+          'FilterBank/ch1',
+        ]),
         'FilterBank/ch',
       );
     });
@@ -303,8 +337,10 @@ void main() {
     });
 
     test('longestCommonPrefix is case-sensitive', () {
-      final prefix =
-          HierarchyService.longestCommonPrefix(['Filter/abc', 'Filter/abd']);
+      final prefix = HierarchyService.longestCommonPrefix([
+        'Filter/abc',
+        'Filter/abd',
+      ]);
       expect(prefix, 'Filter/ab');
     });
   });
@@ -313,9 +349,9 @@ void main() {
 
   group('HierarchySearchController — additional coverage', () {
     test('selectAt selects valid index', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..updateQuery('clk');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..updateQuery('clk');
       expect(ctrl.hasResults, isTrue);
 
       ctrl.selectAt(0);
@@ -323,9 +359,9 @@ void main() {
     });
 
     test('selectAt clamps high index to last result', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..updateQuery('clk');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..updateQuery('clk');
       expect(ctrl.hasResults, isTrue);
 
       ctrl.selectAt(999);
@@ -333,9 +369,9 @@ void main() {
     });
 
     test('selectAt clamps negative index to zero', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..updateQuery('clk');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..updateQuery('clk');
       expect(ctrl.hasResults, isTrue);
 
       ctrl.selectAt(-5);
@@ -343,17 +379,17 @@ void main() {
     });
 
     test('selectAt on empty results is no-op', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..selectAt(3);
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..selectAt(3);
       expect(ctrl.selectedIndex, 0);
       expect(ctrl.hasResults, isFalse);
     });
 
     test('tabComplete expands to longest common prefix', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..updateQuery('clk');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..updateQuery('clk');
       if (ctrl.results.length > 1) {
         final expansion = ctrl.tabComplete('clk');
         // Expansion should be longer than the query if results share a
@@ -365,16 +401,16 @@ void main() {
     });
 
     test('tabComplete returns null when no results', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..updateQuery('zzz_nonexistent');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..updateQuery('zzz_nonexistent');
       expect(ctrl.tabComplete('zzz_nonexistent'), isNull);
     });
 
     test('tabComplete returns null when prefix is not longer', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(service)
-            ..updateQuery('clk');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        service,
+      )..updateQuery('clk');
       // If there's a single result whose displayPath equals normalized
       // query, tabComplete should return null or the path itself.
       // With multiple results from different modules, the common prefix
@@ -397,8 +433,10 @@ void main() {
 
     test('childCount reflects node.children.length', () {
       final results = service.searchOccurrences('FilterBank');
-      final fbResult = results.firstWhere((r) => r.path.length == 1,
-          orElse: () => results.first);
+      final fbResult = results.firstWhere(
+        (r) => r.path.length == 1,
+        orElse: () => results.first,
+      );
       expect(fbResult.childCount, greaterThan(0));
     });
 
@@ -454,21 +492,30 @@ void main() {
       // Both channels should have a clk port
       final results = service.searchSignals('clk');
       final channelClks = results
-          .where((r) =>
-              r.signalId.contains('ch0_1') || r.signalId.contains('ch1_1'))
+          .where(
+            (r) => r.signalId.contains('ch0_1') || r.signalId.contains('ch1_1'),
+          )
           .toList();
       // Should find clk in both ch0_1 and ch1_1
       expect(
-          channelClks.where((r) => r.signalId.contains('ch0_1')), isNotEmpty);
+        channelClks.where((r) => r.signalId.contains('ch0_1')),
+        isNotEmpty,
+      );
       expect(
-          channelClks.where((r) => r.signalId.contains('ch1_1')), isNotEmpty);
+        channelClks.where((r) => r.signalId.contains('ch1_1')),
+        isNotEmpty,
+      );
     });
 
     test('addresses resolve independently for each instance', () {
       final ch0Addr = OccurrenceAddress.tryFromPathname(
-          'FilterBank/ch0_1/clk', service.root);
+        'FilterBank/ch0_1/clk',
+        service.root,
+      );
       final ch1Addr = OccurrenceAddress.tryFromPathname(
-          'FilterBank/ch1_1/clk', service.root);
+        'FilterBank/ch1_1/clk',
+        service.root,
+      );
 
       expect(ch0Addr, isNotNull);
       expect(ch1Addr, isNotNull);
@@ -489,29 +536,43 @@ void main() {
       final ch0Internal = ch0.signals.where((s) => !s.isPort).toList();
       final ch1Internal = ch1.signals.where((s) => !s.isPort).toList();
 
-      expect(ch0Internal, isNotEmpty,
-          reason: 'ch0_1 should have internal signals from netnames');
-      expect(ch1Internal, isNotEmpty,
-          reason: 'ch1_1 should have internal signals from netnames');
+      expect(
+        ch0Internal,
+        isNotEmpty,
+        reason: 'ch0_1 should have internal signals from netnames',
+      );
+      expect(
+        ch1Internal,
+        isNotEmpty,
+        reason: 'ch1_1 should have internal signals from netnames',
+      );
     });
 
     test('both instances share the same internal signal names', () {
       final ch0 = service.root.children.firstWhere((c) => c.name == 'ch0_1');
       final ch1 = service.root.children.firstWhere((c) => c.name == 'ch1_1');
 
-      final ch0Names =
-          ch0.signals.where((s) => !s.isPort).map((s) => s.name).toSet();
-      final ch1Names =
-          ch1.signals.where((s) => !s.isPort).map((s) => s.name).toSet();
+      final ch0Names = ch0.signals
+          .where((s) => !s.isPort)
+          .map((s) => s.name)
+          .toSet();
+      final ch1Names = ch1.signals
+          .where((s) => !s.isPort)
+          .map((s) => s.name)
+          .toSet();
       expect(ch0Names, ch1Names);
     });
 
     test('internal signals are addressable per-instance', () {
       // validPipe exists as a netname in both FilterChannel definitions
       final ch0Addr = OccurrenceAddress.tryFromPathname(
-          'FilterBank/ch0_1/validPipe', service.root);
+        'FilterBank/ch0_1/validPipe',
+        service.root,
+      );
       final ch1Addr = OccurrenceAddress.tryFromPathname(
-          'FilterBank/ch1_1/validPipe', service.root);
+        'FilterBank/ch1_1/validPipe',
+        service.root,
+      );
 
       expect(ch0Addr, isNotNull, reason: 'ch0_1/validPipe should resolve');
       expect(ch1Addr, isNotNull, reason: 'ch1_1/validPipe should resolve');
@@ -537,8 +598,11 @@ void main() {
     test('depthFirstSignals includes internal signals from both instances', () {
       final all = service.root.depthFirstSignals();
       final vpSigs = all.where((s) => s.name == 'validPipe').toList();
-      expect(vpSigs.length, greaterThanOrEqualTo(2),
-          reason: 'validPipe should appear in at least ch0 and ch1');
+      expect(
+        vpSigs.length,
+        greaterThanOrEqualTo(2),
+        reason: 'validPipe should appear in at least ch0 and ch1',
+      );
     });
   });
 
@@ -560,15 +624,21 @@ void main() {
     test('inputs getter excludes inout ports', () {
       final inputs = service.root.inputs;
       final inoutInInputs = inputs.where((s) => s.direction == 'inout');
-      expect(inoutInInputs, isEmpty,
-          reason: 'inputs should not include inout ports');
+      expect(
+        inoutInInputs,
+        isEmpty,
+        reason: 'inputs should not include inout ports',
+      );
     });
 
     test('outputs getter excludes inout ports', () {
       final outputs = service.root.outputs;
       final inoutInOutputs = outputs.where((s) => s.direction == 'inout');
-      expect(inoutInOutputs, isEmpty,
-          reason: 'outputs should not include inout ports');
+      expect(
+        inoutInOutputs,
+        isEmpty,
+        reason: 'outputs should not include inout ports',
+      );
     });
 
     test('ports getter includes inout ports', () {
@@ -579,8 +649,10 @@ void main() {
     });
 
     test('dataBus is addressable and resolvable', () {
-      final addr =
-          OccurrenceAddress.tryFromPathname('FilterBank/dataBus', service.root);
+      final addr = OccurrenceAddress.tryFromPathname(
+        'FilterBank/dataBus',
+        service.root,
+      );
       expect(addr, isNotNull, reason: 'dataBus should be addressable');
 
       final sig = service.signalByAddress(addr!);
@@ -592,8 +664,9 @@ void main() {
     test('search finds dataBus inout port', () {
       final results = service.searchSignals('dataBus');
       expect(results, isNotEmpty);
-      final dataBusResults =
-          results.where((r) => r.signalId.contains('dataBus'));
+      final dataBusResults = results.where(
+        (r) => r.signalId.contains('dataBus'),
+      );
       expect(dataBusResults, isNotEmpty);
     });
 
@@ -601,27 +674,38 @@ void main() {
       final sharedBus = service.root.children
           .where((c) => c.name == 'sharedBus_1')
           .firstOrNull;
-      expect(sharedBus, isNotNull,
-          reason: 'sharedBus_1 cell should be present');
+      expect(
+        sharedBus,
+        isNotNull,
+        reason: 'sharedBus_1 cell should be present',
+      );
       final childDataBus = sharedBus!.signals
           .where((s) => s.isPort)
           .where((p) => p.name == 'dataBus')
           .firstOrNull;
-      expect(childDataBus, isNotNull,
-          reason: 'SharedDataBus should have dataBus inout');
+      expect(
+        childDataBus,
+        isNotNull,
+        reason: 'SharedDataBus should have dataBus inout',
+      );
       expect(childDataBus!.isInout, isTrue);
     });
 
     test('depthFirstSignals includes inout ports', () {
       final all = service.root.depthFirstSignals();
       final inouts = all.where((s) => s.isInout);
-      expect(inouts, isNotEmpty,
-          reason: 'depthFirstSignals should include inout ports');
+      expect(
+        inouts,
+        isNotEmpty,
+        reason: 'depthFirstSignals should include inout ports',
+      );
     });
 
     test('addressToPathname round-trips for inout signal', () {
-      final addr =
-          OccurrenceAddress.tryFromPathname('FilterBank/dataBus', service.root);
+      final addr = OccurrenceAddress.tryFromPathname(
+        'FilterBank/dataBus',
+        service.root,
+      );
       expect(addr, isNotNull);
       final pathname = service.addressToPathname(addr!, asSignal: true);
       expect(pathname, 'FilterBank/dataBus');
