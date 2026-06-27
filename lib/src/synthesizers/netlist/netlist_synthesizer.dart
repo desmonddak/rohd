@@ -415,22 +415,11 @@ class NetlistSynthesizer extends Synthesizer {
           }
         }
 
-        // When SynthBuilder uniquifies a module definition name (e.g.
-        // OnesComplementAdder_W5 → OnesComplementAdder_W5_0) the cell `type`
-        // becomes the deduped name while TraceService / FLC data still key on
-        // the original definitionName.  Record the original name in a
-        // `rohd_class` attribute so downstream consumers (e.g.
-        // NetlistHierarchyAdapter) can resolve FLC entries correctly.
-        final rohdClassAttr = <String, Object?>{
-          if (!isLeaf && sub.definitionName != defaultCellType)
-            'rohd_class': sub.definitionName,
-        };
-
         cells[cellKey] = {
           'hide_name': 0,
           'type': mapped?.cellType ?? defaultCellType,
           'parameters': mapped?.parameters ?? <String, Object?>{},
-          'attributes': rohdClassAttr,
+          'attributes': <String, Object?>{},
           'port_directions': cellPortDirs,
           'connections': cellConns,
         };
@@ -1906,11 +1895,12 @@ class NetlistSynthesizer extends Synthesizer {
   /// callers to retain per-module results for incremental serving while
   /// avoiding redundant re-synthesis.
   Map<String, Map<String, Object?>> buildModulesMap(
-      SynthBuilder synth, Module top,
-      {String? packageRoot}) {
+      SynthBuilder synth, Module top) {
     final swEntries = Stopwatch()..start();
-    final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
-        topModule: top, packageRoot: packageRoot);
+    final modules = NetlistPasses.collectModuleEntries(
+      synth.synthesisResults,
+      topModule: top,
+    );
     swEntries.stop();
 
     final swPasses = Stopwatch()..start();
@@ -1921,10 +1911,9 @@ class NetlistSynthesizer extends Synthesizer {
   }
 
   /// Generate the combined netlist JSON from a [SynthBuilder]'s results.
-  String generateCombinedJson(SynthBuilder synth, Module top,
-      {String? packageRoot}) {
+  String generateCombinedJson(SynthBuilder synth, Module top) {
     final swCollect = Stopwatch()..start();
-    final modules = buildModulesMap(synth, top, packageRoot: packageRoot);
+    final modules = buildModulesMap(synth, top);
     swCollect.stop();
 
     final swCompress = Stopwatch()..start();
@@ -2036,13 +2025,11 @@ class NetlistSynthesizer extends Synthesizer {
   ///
   /// Builds a [SynthBuilder] internally and returns the full JSON.
   ///
-  /// When [packageRoot] is not provided but [NetlistOptions.trace] is
-  /// `true`, the effective package root from [options] is used
-  /// automatically.
+  /// The [packageRoot] parameter is accepted for API compatibility with
+  /// downstream trace-enabled branches.
   String synthesizeToJson(Module top, {String? packageRoot}) {
-    final effectiveRoot = packageRoot ?? options.effectivePackageRoot;
     final sb = SynthBuilder(top, this);
-    return generateCombinedJson(sb, top, packageRoot: effectiveRoot);
+    return generateCombinedJson(sb, top);
   }
 }
 

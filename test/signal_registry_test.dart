@@ -35,16 +35,18 @@ class _Counter extends Module {
     final val = addOutput('val', width: width);
     final nextVal = Logic(name: 'nextVal', width: width);
     nextVal <= val + 1;
-    Sequential.multi([
-      SimpleClockGenerator(10).clk,
-      reset,
-    ], [
-      If(reset, then: [
-        val < 0,
-      ], orElse: [
-        If(en, then: [val < nextVal]),
-      ]),
-    ]);
+    Sequential.multi(
+      [SimpleClockGenerator(10).clk, reset],
+      [
+        If(
+          reset,
+          then: [val < 0],
+          orElse: [
+            If(en, then: [val < nextVal]),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -268,10 +270,7 @@ void main() {
 
       final c = Const(LogicValue.ofString('01'));
       final sig = Logic(name: 'x');
-      final name = mod.namer.signalNameOfBest(
-        [sig],
-        constValue: c,
-      );
+      final name = mod.namer.signalNameOfBest([sig], constValue: c);
       expect(name, equals(c.value.toString()));
     });
 
@@ -325,8 +324,10 @@ void main() {
       await mod.build();
 
       final preferred = Logic(name: 'good', naming: Naming.mergeable);
-      final unpreferred =
-          Logic(name: Naming.unpreferredName('bad'), naming: Naming.mergeable);
+      final unpreferred = Logic(
+        name: Naming.unpreferredName('bad'),
+        naming: Naming.mergeable,
+      );
       final name = mod.namer.signalNameOfBest([unpreferred, preferred]);
       expect(name, contains('good'));
     });
@@ -348,10 +349,7 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      expect(
-        () => mod.namer.signalNameOfBest([]),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => mod.namer.signalNameOfBest([]), throwsA(isA<StateError>()));
     });
 
     test('unnamed signals get a name', () async {

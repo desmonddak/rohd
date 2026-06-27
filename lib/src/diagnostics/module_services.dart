@@ -9,7 +9,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/diagnostics/inspector_service.dart';
 
 /// A slim, type-keyed registry of [ModuleService]s.
 ///

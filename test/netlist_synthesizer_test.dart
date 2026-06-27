@@ -10,6 +10,7 @@
 // Author: Auto-generated
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/examples/filter_bank_modules.dart';
@@ -332,7 +333,9 @@ class _NamedConstModule extends Module {
     // _dynamicInputToLogic in SummationBase.
     final myConst = Logic(name: 'myConst', width: 8)..gets(Const(0, width: 8));
 
-    Combinational([result < mux(dataIn.or(), dataIn, myConst)]);
+    Combinational([
+      result < mux(dataIn.or(), dataIn, myConst),
+    ]);
   }
 }
 
@@ -372,7 +375,9 @@ Future<Map<String, dynamic>> _synthToMap(
 }) async {
   await mod.build();
   final synth = SynthBuilder(mod, NetlistSynthesizer(options: options));
-  final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(mod);
+  final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+    mod,
+  );
   return jsonDecode(json) as Map<String, dynamic>;
 }
 
@@ -770,9 +775,8 @@ void main() {
 
     test('default options produce valid netlist', () async {
       final synth = SynthBuilder(filterBank, NetlistSynthesizer());
-      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
-        filterBank,
-      );
+      final json = (synth.synthesizer as NetlistSynthesizer)
+          .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       expect(_modules(parsed), isNotEmpty);
     });
@@ -782,9 +786,8 @@ void main() {
         filterBank,
         NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
       );
-      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
-        filterBank,
-      );
+      final json = (synth.synthesizer as NetlistSynthesizer)
+          .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final mod = _modules(parsed);
       expect(mod, isNotEmpty);
@@ -810,9 +813,8 @@ void main() {
         filterBank,
         NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
       );
-      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
-        filterBank,
-      );
+      final json = (synth.synthesizer as NetlistSynthesizer)
+          .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       expect(_modules(parsed), isNotEmpty);
     });
@@ -822,9 +824,8 @@ void main() {
         filterBank,
         NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
       );
-      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
-        filterBank,
-      );
+      final json = (synth.synthesizer as NetlistSynthesizer)
+          .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       expect(_modules(parsed), isNotEmpty);
     });
@@ -941,9 +942,8 @@ void main() {
       final tree = TreeOfTwoInputModules(seq, (a, b) => mux(a > b, a, b));
       await tree.build();
       final synth = SynthBuilder(tree, NetlistSynthesizer());
-      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
-        tree,
-      );
+      final json =
+          (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
       expect(json, isNotEmpty);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final mod = _modules(parsed);
@@ -1003,7 +1003,9 @@ void main() {
 
       // Should have sample0/sample1 and channelOut as array ports
       expect(
-        ports.keys.any((k) => k.contains('sample') || k.contains('channelOut')),
+        ports.keys.any(
+          (k) => k.contains('sample') || k.contains('channelOut'),
+        ),
         isTrue,
         reason: 'FilterBank should have array port signals',
       );
@@ -1149,7 +1151,7 @@ void main() {
   // ── Group 7: Design API path ───────────────────────────────────────
 
   group('Design API path', () {
-    test('post-build NetlistService.create enables netlist access', () async {
+    test('build with netlistOptions enables NetlistService', () async {
       final en = Logic(name: 'en');
       final reset = Logic(name: 'reset');
       final clk = SimpleClockGenerator(10).clk;
@@ -1189,6 +1191,46 @@ void main() {
       final netlist = parsed['netlist'] as Map<String, dynamic>;
       final modules = netlist['modules'] as Map<String, dynamic>;
       expect(modules, isNotEmpty);
+    });
+
+    test('NetlistService is an OutputService and registers itself', () async {
+      final fb = _buildFilterBank();
+      await fb.build();
+      final netSvc = NetlistService(fb);
+
+      expect(netSvc, isA<OutputService>());
+      expect(ModuleServices.instance.lookup<NetlistService>(), same(netSvc));
+      expect(NetlistService.current, same(netSvc));
+
+      final summary = netSvc.toJson();
+      expect(summary['version'], equals(netSvc.version));
+      expect(summary['modules'], isList);
+
+      ModuleServices.instance.reset();
+      expect(ModuleServices.instance.lookup<NetlistService>(), isNull);
+    });
+
+    test('register false keeps NetlistService out of the registry', () async {
+      final fb = _buildFilterBank();
+      await fb.build();
+      ModuleServices.instance.reset();
+      NetlistService(fb, register: false);
+      expect(ModuleServices.instance.lookup<NetlistService>(), isNull);
+    });
+
+    test('write() emits the full netlist JSON to a file', () async {
+      final fb = _buildFilterBank();
+      await fb.build();
+      final netSvc = NetlistService(fb, register: false);
+
+      final dir = Directory.systemTemp.createTempSync('rohd_netlist_');
+      try {
+        final path = '${dir.path}/netlist.json';
+        netSvc.write(path);
+        expect(File(path).readAsStringSync(), equals(netSvc.json));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
     });
   });
 
@@ -1344,10 +1386,13 @@ void main() {
       final mods = _modules(json);
 
       // Find the module definition for _NamedConstModule.
-      final modDef = mods.values.firstWhere((m) {
-        final def = m as Map<String, dynamic>;
-        return (def['cells'] as Map?)?.isNotEmpty ?? false;
-      }, orElse: () => mods.values.first) as Map<String, dynamic>;
+      final modDef = mods.values.firstWhere(
+        (m) {
+          final def = m as Map<String, dynamic>;
+          return (def['cells'] as Map?)?.isNotEmpty ?? false;
+        },
+        orElse: () => mods.values.first,
+      ) as Map<String, dynamic>;
 
       final netnames = _netnames(modDef);
       final cells = _cells(modDef);
@@ -1369,9 +1414,8 @@ void main() {
       );
 
       // The netname bits should be integer wire IDs (not string literals).
-      final constNetname = netnames.entries.firstWhere(
-        (e) => e.key.contains('myConst'),
-      );
+      final constNetname =
+          netnames.entries.firstWhere((e) => e.key.contains('myConst'));
       final bits = (constNetname.value as Map<String, dynamic>)['bits'] as List;
       expect(
         bits.every((b) => b is int),
