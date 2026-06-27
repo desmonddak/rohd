@@ -105,8 +105,8 @@ void main() {
     test('netnames with hide_name=1 are excluded', () {
       // FilterBank has controller_1_loadingPhase with hide_name=1
       final allSignalNames = service.root.depthFirstSignals().map(
-        (s) => s.name,
-      );
+            (s) => s.name,
+          );
       expect(allSignalNames, isNot(contains('controller_1_loadingPhase')));
     });
 
@@ -552,14 +552,10 @@ void main() {
       final ch0 = service.root.children.firstWhere((c) => c.name == 'ch0_1');
       final ch1 = service.root.children.firstWhere((c) => c.name == 'ch1_1');
 
-      final ch0Names = ch0.signals
-          .where((s) => !s.isPort)
-          .map((s) => s.name)
-          .toSet();
-      final ch1Names = ch1.signals
-          .where((s) => !s.isPort)
-          .map((s) => s.name)
-          .toSet();
+      final ch0Names =
+          ch0.signals.where((s) => !s.isPort).map((s) => s.name).toSet();
+      final ch1Names =
+          ch1.signals.where((s) => !s.isPort).map((s) => s.name).toSet();
       expect(ch0Names, ch1Names);
     });
 

@@ -70,8 +70,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
     }
 
     // Find top module or default to first
-    final topName =
-        modules.entries
+    final topName = modules.entries
             .where(
               (e) =>
                   ((e.value as Map<String, dynamic>)['attributes']
@@ -132,29 +131,28 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
       signalsList.addAll(
         netsData.entries
             .where(
-              (entry) =>
-                  !portNames.contains(entry.key) &&
-                  !entry.key.startsWith(r'$') &&
-                  () {
-                    final h =
-                        (entry.value as Map<String, dynamic>)['hide_name'];
-                    return h != 1 && h != '1';
-                  }(),
-            )
+          (entry) =>
+              !portNames.contains(entry.key) &&
+              !entry.key.startsWith(r'$') &&
+              () {
+                final h = (entry.value as Map<String, dynamic>)['hide_name'];
+                return h != 1 && h != '1';
+              }(),
+        )
             .map((entry) {
-              final netData = entry.value as Map<String, dynamic>;
-              final bits = (netData['bits'] as List?)?.length ?? 0;
-              final attrs = netData['attributes'] as Map<String, dynamic>?;
-              final isComputed =
-                  attrs?['computed'] == 1 || attrs?['computed'] == true;
-              final logicType = netData['logic_type'] as Map<String, dynamic>?;
-              return SignalOccurrence(
-                name: entry.key,
-                width: bits > 0 ? bits : 1,
-                isComputed: isComputed,
-                logicType: logicType,
-              );
-            }),
+          final netData = entry.value as Map<String, dynamic>;
+          final bits = (netData['bits'] as List?)?.length ?? 0;
+          final attrs = netData['attributes'] as Map<String, dynamic>?;
+          final isComputed =
+              attrs?['computed'] == 1 || attrs?['computed'] == true;
+          final logicType = netData['logic_type'] as Map<String, dynamic>?;
+          return SignalOccurrence(
+            name: entry.key,
+            width: bits > 0 ? bits : 1,
+            isComputed: isComputed,
+            logicType: logicType,
+          );
+        }),
       );
     }
 
@@ -191,8 +189,7 @@ class NetlistHierarchyAdapter extends BaseHierarchyAdapter {
                 final (pIdx, kv) = pEntry;
                 final pName = kv.key;
                 final pDir = kv.value.toString();
-                final bits =
-                    (connections?[pName] as List?)?.length ??
+                final bits = (connections?[pName] as List?)?.length ??
                     (portWidths?[pName] as int?) ??
                     1;
                 return SignalOccurrence(
