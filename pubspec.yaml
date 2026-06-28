@@ -11,9 +11,12 @@ environment:
 
 dependencies:
   collection: ^1.15.0
+  json_rpc_2: ^3.0.0
   logging: ^1.0.1
   meta: ^1.9.0
+  stream_channel: ^2.1.0
   test: ^1.17.3
+  web_socket_channel: ^3.0.0
 
 dev_dependencies:
   benchmark_harness: ^2.2.0
