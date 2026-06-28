@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the generateSynth method from the SystemVerilog mixin, for the Dart programming language.">
-  <title>generateSynth method - SystemVerilog mixin - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the onValueChange method from the WaveformService class, for the Dart programming language.">
+  <title>onValueChange method - WaveformService class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
-    <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    <li class="self-crumb">generateSynth method</li>
+    <li><a href="../../rohd/WaveformService-class.html">WaveformService</a></li>
+    <li class="self-crumb">onValueChange method</li>
   </ol>
-  <div class="self-name">generateSynth</div>
+  <div class="self-name">onValueChange</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,41 +46,41 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;SystemVerilog-mixin-sidebar.html"
+    data-above-sidebar="rohd&#47;WaveformService-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">generateSynth</span> method 
+<h1><span class="kind-method">onValueChange</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
-<span class="returntype"><a href="https://api.dart.dev/stable/3.12.2/dart-core/String-class.html">String</a></span>
-<span class="name ">generateSynth</span>(<wbr>)
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://pub.dev/documentation/meta/1.18.3/meta/protected-constant.html">protected</a></li>
+    </ol>
+  </div>
+<span class="returntype">void</span>
+<span class="name ">onValueChange</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="onValueChange-param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span>, </span></li>
+<li><span class="parameter" id="onValueChange-param-timestamp"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">timestamp</span></span></li>
+</ol>)
 
-      <div class="features"><span class="feature">inherited</span></div>
+      
 
     </section>
     
 <section class="desc markdown">
-  <p>Returns a synthesized version of this <a href="../../rohd/Module-class.html">Module</a>.</p>
-<p>Currently returns one long file in SystemVerilog, but in the future
-may have other output formats, languages, files, etc.</p>
-<p>For richer access to per-module file contents, named maps, and individual
-file writing, see <a href="../../rohd/SvService-class.html">SvService</a> (and <a href="../../rohd/SvService/synthOutput.html">SvService.synthOutput</a> for the
-equivalent one-shot string).</p>
+  <p>Called for every value-change event on <code>signal</code> at <code>timestamp</code>.</p>
+<p>Only called within the <a href="../../rohd/WaveformService/startTime.html">startTime</a> / <a href="../../rohd/WaveformService/stopTime.html">stopTime</a> window.</p>
+<p>Override in a subclass to feed an in-memory waveform store or
+streaming buffer.  Always call <code>super</code> first.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String generateSynth() {
-  if (!_hasBuilt) {
-    throw ModuleNotBuiltException(this);
-  }
-
-  return SvService(this, register: false).synthOutput;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">@protected
+void onValueChange(Logic signal, int timestamp) {}</code></pre>
 </section>
 
 
@@ -95,11 +95,11 @@ equivalent one-shot string).</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
-    <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    <li class="self-crumb">generateSynth method</li>
+    <li><a href="../../rohd/WaveformService-class.html">WaveformService</a></li>
+    <li class="self-crumb">onValueChange method</li>
 </ol>
 
-    <h5>SystemVerilog mixin</h5>
+    <h5>WaveformService class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

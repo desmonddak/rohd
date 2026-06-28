@@ -130,6 +130,15 @@ is executed.
 the expression.
 </dd>
 
+          <dt id="CodegenService">
+  <span class="name "><a href="../rohd/CodegenService-class.html">CodegenService</a></span> 
+
+</dt>
+<dd>
+  An <a href="../rohd/OutputService-class.html">OutputService</a> that generates source-code text, keyed per module
+definition.
+</dd>
+
           <dt id="Combinational">
   <span class="name "><a href="../rohd/Combinational-class.html">Combinational</a></span> 
 
@@ -361,6 +370,23 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
 boundaries.
 </dd>
 
+          <dt id="ModuleService">
+  <span class="name "><a href="../rohd/ModuleService-class.html">ModuleService</a></span> 
+
+</dt>
+<dd>
+  The common contract implemented by every module-scoped service that
+registers with <a href="../rohd/ModuleServices-class.html">ModuleServices</a>.
+</dd>
+
+          <dt id="ModuleServices">
+  <span class="name "><a href="../rohd/ModuleServices-class.html">ModuleServices</a></span> 
+
+</dt>
+<dd>
+  A slim, type-keyed registry of <a href="../rohd/ModuleService-class.html">ModuleService</a>s.
+</dd>
+
           <dt id="Modulo">
   <span class="name "><a href="../rohd/Modulo-class.html">Modulo</a></span> 
 
@@ -415,6 +441,14 @@ boundaries.
 </dt>
 <dd>
   A unary OR gate.
+</dd>
+
+          <dt id="OutputService">
+  <span class="name "><a href="../rohd/OutputService-class.html">OutputService</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/ModuleService-class.html">ModuleService</a> that emits output to one or more files.
 </dd>
 
           <dt id="PairInterface">
@@ -525,6 +559,14 @@ representation.
   A two-input subtraction module.
 </dd>
 
+          <dt id="SvService">
+  <span class="name "><a href="../rohd/SvService-class.html">SvService</a></span> 
+
+</dt>
+<dd>
+  A service that wraps SystemVerilog synthesis of a <a href="../rohd/Module-class.html">Module</a> hierarchy.
+</dd>
+
           <dt id="Swizzle">
   <span class="name "><a href="../rohd/Swizzle-class.html">Swizzle</a></span> 
 
@@ -600,6 +642,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
   A waveform dumper for simulations.
 </dd>
 
+          <dt id="WaveformService">
+  <span class="name "><a href="../rohd/WaveformService-class.html">WaveformService</a></span> 
+
+</dt>
+<dd>
+  A waveform capture service that writes signal changes to a file.
+</dd>
+
           <dt id="Xor2Gate">
   <span class="name "><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></span> 
 
@@ -646,6 +696,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
   / Configuration options and utilities for naming and renaming signals.
 </dd>
 
+          <dt id="OverwritePolicy">
+  <span class="name "><a href="../rohd/OverwritePolicy.html">OverwritePolicy</a></span> 
+
+</dt>
+<dd>
+  Policy applied when the output file already exists at construction time.
+</dd>
+
           <dt id="PairDirection">
   <span class="name "><a href="../rohd/PairDirection.html">PairDirection</a></span> 
 
@@ -668,6 +726,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   An enum for the various phases of the <a href="../rohd/Simulator-class.html">Simulator</a>.
+</dd>
+
+          <dt id="WaveOutputFormat">
+  <span class="name "><a href="../rohd/WaveOutputFormat.html">WaveOutputFormat</a></span> 
+
+</dt>
+<dd>
+  The output format for waveform capture.
 </dd>
 
       </dl>
