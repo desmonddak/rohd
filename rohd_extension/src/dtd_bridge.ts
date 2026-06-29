@@ -200,12 +200,34 @@ let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let reconnectAttempts = 0;
 let dtdUri: string | undefined;
 
+// In-flight connection guard. `connectToDtd` is async (it awaits the dynamic
+// `ws` import before assigning `ws`), so two near-simultaneous callers — e.g.
+// activation-time discovery and the debug tracker — can both pass the
+// `isConnected()` check (which is only OPEN, never CONNECTING) and open a
+// second socket to the same URI. The second socket then fails registration
+// with "Service already registered by another client." This flag is set
+// synchronously at the top of `connectToDtd` to close that window.
+let connecting = false;
+let connectingUri: string | undefined;
+
 /**
  * Connect to the DTD and register services.
  *
  * @param uri WebSocket URI of the Dart Tooling Daemon.
  */
 async function connectToDtd(uri: string): Promise<boolean> {
+  // Synchronous dedupe: ignore a second connect to a URI we are already
+  // connecting to or connected to.
+  if (connecting && connectingUri === uri) {
+    output.appendLine(`[DTD] Connect already in progress for ${uri}; skipping`);
+    return false;
+  }
+  if (isConnected() && dtdUri === uri) {
+    return true;
+  }
+
+  connecting = true;
+  connectingUri = uri;
   dtdUri = uri;
 
   try {
@@ -218,6 +240,8 @@ async function connectToDtd(uri: string): Promise<boolean> {
       ws!.on('open', () => {
         output.appendLine(`[DTD] Connected to ${uri}`);
         reconnectAttempts = 0;
+        connecting = false;
+        connectingUri = undefined;
 
         registerGoToSourceHandler();
 
@@ -278,11 +302,15 @@ async function connectToDtd(uri: string): Promise<boolean> {
       ws!.on('error', (err: Error) => {
         output.appendLine(`[DTD] Connection error: ${err.message}`);
         ws = undefined;
+        connecting = false;
+        connectingUri = undefined;
         resolve(false);
       });
     });
   } catch (err) {
     output.appendLine(`[DTD] Failed to connect: ${err}`);
+    connecting = false;
+    connectingUri = undefined;
     return false;
   }
 }
@@ -355,6 +383,9 @@ export async function connectIfNeeded(uri: string): Promise<void> {
   if (isConnected()) {
     return; // Already connected — nothing to do.
   }
+  if (connecting && connectingUri === uri) {
+    return; // A connection to this URI is already in flight.
+  }
   output.appendLine(`[DTD] Connecting via debug tracker: ${uri}`);
   await connectToDtd(uri);
 }
@@ -395,6 +426,8 @@ export async function dispose(): Promise<void> {
     reconnectTimer = undefined;
   }
   dtdUri = undefined;
+  connecting = false;
+  connectingUri = undefined;
 
   if (ws) {
     ws.close();
