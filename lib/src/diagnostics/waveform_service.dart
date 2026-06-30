@@ -14,6 +14,8 @@ import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/fst/fst_types.dart';
+import 'package:rohd/src/fst/fst_writer.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
@@ -135,11 +137,28 @@ class WaveformService implements ModuleService {
   /// Whether to register this service with [ModuleServices] for inspection.
   final bool register;
 
-  /// Whether to enable DevTools streaming.
+  /// Whether to stream live waveform data to DevTools.
   ///
-  /// The base [WaveformService] stores this flag but takes no action on it.
-  /// The DevTools subclass uses it to conditionally register extensions.
+  /// When `true` (the default), the service feeds every captured signal into
+  /// the shared [WaveformDataService] singleton, which exposes the VM-service
+  /// / DTD extensions that DevTools queries by `OccurrenceAddress`.  This is
+  /// the same live path used by [WaveDumper] (whose `enableDevTools` likewise
+  /// defaults to `true`); it is independent of the VCD/FST file written to
+  /// [outputPath].  Set to `false` for file-only capture with no live
+  /// inspection overhead.
   final bool enableDevToolsStreaming;
+
+  /// Whether to expand [LogicStructure] signals into FST `struct` scopes
+  /// (FST output only).
+  ///
+  /// When `true` (the default), each non-array [LogicStructure] (such as a
+  /// `FloatingPoint` with its `sign`, `exponent`, and `mantissa` fields) is
+  /// emitted as a named `struct` scope with one child signal per field, so
+  /// wave viewers group the fields visually as a packed struct.
+  ///
+  /// When `false`, every signal — including [LogicStructure]s — is written as
+  /// a single flat wide bus.  Has no effect on VCD output.
+  final bool expandStructs;
 
   // ─── Internal file-writing state ─────────────────────────────
 
@@ -157,6 +176,12 @@ class WaveformService implements ModuleService {
 
   /// Maps each captured [Logic] to its VCD marker string.
   final Map<Logic, String> _signalToMarkerMap = {};
+
+  /// FST writer used when [format] is [WaveOutputFormat.fst]; otherwise `null`.
+  FstWriter? _fstWriter;
+
+  /// Maps each captured [Logic] to its FST signal handle (FST mode only).
+  final Map<Logic, FstSignalHandle> _signalToFstHandle = {};
 
   /// Signals that changed during the current simulation timestamp.
   final Set<Logic> _changedThisTimestamp = HashSet<Logic>();
@@ -182,7 +207,8 @@ class WaveformService implements ModuleService {
       this.flushBufferSize = 100000,
       this.overwritePolicy = OverwritePolicy.overwrite,
       this.register = true,
-      this.enableDevToolsStreaming = false}) {
+      this.enableDevToolsStreaming = true,
+      this.expandStructs = true}) {
     if (!module.hasBuilt) {
       throw Exception('Module must be built before creating WaveformService. '
           'Call build() first.');
@@ -198,12 +224,28 @@ class WaveformService implements ModuleService {
       }
     }
 
-    _outputFile = File(outputPath)..createSync(recursive: true);
-    _outFileSink = _outputFile.openWrite();
+    if (format == WaveOutputFormat.fst) {
+      _fstWriter = FstWriter(outputPath,
+          config: FstWriterConfig(
+              timescaleExponent: _timescaleExponent(timescale)));
+      _setupFst();
+    } else {
+      _outputFile = File(outputPath)..createSync(recursive: true);
+      _outFileSink = _outputFile.openWrite();
+      _collectSignals();
+      _writeHeader();
+      _writeScope();
+    }
 
-    _collectSignals();
-    _writeHeader();
-    _writeScope();
+    if (enableDevToolsStreaming) {
+      // Wire the live DevTools path via the shared WaveformDataService
+      // singleton.  [init] builds the signal map and registers the
+      // VM-service / DTD extensions; [startRecording] attaches the change
+      // listeners.  This reuses the exact same live path as [WaveDumper]
+      // rather than duplicating the signal-recording logic here.
+      WaveformDataService.init(module);
+      WaveformDataService.instance.startRecording();
+    }
 
     Simulator.preTick.listen((_) {
       if (Simulator.time != _currentDumpingTimestamp) {
@@ -367,11 +409,19 @@ class WaveformService implements ModuleService {
       return;
     }
 
-    _writeToBuffer('#$timestamp\n');
+    final fst = _fstWriter;
+    if (fst == null) {
+      _writeToBuffer('#$timestamp\n');
+    }
 
     final snapshot = Set<Logic>.of(_changedThisTimestamp);
     for (final sig in snapshot) {
-      _writeSignalValueUpdate(sig);
+      if (fst == null) {
+        _writeSignalValueUpdate(sig);
+      } else {
+        fst.emitValueChange(
+            timestamp, _signalToFstHandle[sig]!, _fstValue(sig));
+      }
       onValueChange(sig, timestamp);
     }
     _changedThisTimestamp.clear();
@@ -391,6 +441,101 @@ class WaveformService implements ModuleService {
     _writeToBuffer('$updateValue$marker\n');
   }
 
+  // ─── FST output helpers ───────────────────────────────────────
+
+  /// Declares the full scope hierarchy with the [FstWriter], writes the FST
+  /// header, emits the initial value of every tracked leaf signal (the FST
+  /// equivalent of the VCD `\$dumpvars` section), and registers change
+  /// listeners on each leaf.
+  void _setupFst() {
+    final fst = _fstWriter!;
+    _declareFstScope(module, fst);
+    fst.writeHeader();
+    for (final entry in _signalToFstHandle.entries) {
+      final sig = entry.key;
+      fst.emitValueChange(Simulator.time, entry.value, _fstValue(sig));
+      onSignalCollected(sig);
+      sig.changed.listen((_) {
+        _changedThisTimestamp.add(sig);
+      });
+    }
+  }
+
+  /// Recursively declares [m]'s scope and tracked signals with [fst].
+  ///
+  /// Non-array [LogicStructure]s are expanded into `struct` scopes when
+  /// [expandStructs] is `true`; their field elements are declared during the
+  /// recursion and are therefore skipped at the top level here.
+  void _declareFstScope(Module m, FstWriter fst) {
+    fst.pushScope(m.uniqueInstanceName);
+    for (final sig in m.signals) {
+      if (sig is Const) {
+        continue;
+      }
+      if (signalFilter != null && !signalFilter!(sig)) {
+        continue;
+      }
+      if (expandStructs && sig.parentStructure != null) {
+        continue;
+      }
+      _declareFstSignal(sig, fst);
+    }
+    for (final subModule in m.subModules) {
+      if (subModule is InlineSystemVerilog) {
+        continue;
+      }
+      _declareFstScope(subModule, fst);
+    }
+    fst.popScope();
+  }
+
+  /// Declares [sig] into [fst].
+  ///
+  /// When [expandStructs] is `true` and [sig] is a non-array
+  /// [LogicStructure], it is emitted as a `struct` scope with one child per
+  /// field (recursively); the leaf fields are the targets for value-change
+  /// emissions.  Otherwise [sig] is declared as a single flat wide signal.
+  void _declareFstSignal(Logic sig, FstWriter fst) {
+    if (expandStructs && sig is LogicStructure && sig is! LogicArray) {
+      fst.pushScope(sig.name, type: FstScopeType.struct_);
+      for (final element in sig.elements) {
+        _declareFstSignal(element, fst);
+      }
+      fst.popScope();
+    } else {
+      _signalToFstHandle[sig] = fst.declareSignal(sig.name, sig.width);
+    }
+  }
+
+  /// Returns the MSB-first binary string for [signal], suitable for
+  /// [FstWriter.emitValueChange].
+  String _fstValue(Logic signal) => signal.value.reversed
+      .toList()
+      .map((e) => e.toString(includeWidth: false))
+      .join();
+
+  /// Maps a VCD-style [timescale] string (e.g. `'1ps'`, `'1ns'`) to the
+  /// power-of-ten exponent expected by [FstWriterConfig.timescaleExponent].
+  int _timescaleExponent(String timescale) {
+    final unit = timescale.replaceAll(RegExp(r'[0-9\s]'), '').toLowerCase();
+    switch (unit) {
+      case 'fs':
+        return -15;
+      case 'ps':
+        return -12;
+      case 'ns':
+        return -9;
+      case 'us':
+        return -6;
+      case 'ms':
+        return -3;
+      case 's':
+        return 0;
+      default:
+        return -12;
+    }
+  }
+
   // ─── Buffered I/O ─────────────────────────────────────────────
 
   void _writeToBuffer(String contents) {
@@ -406,6 +551,11 @@ class WaveformService implements ModuleService {
   }
 
   Future<void> _terminate() async {
+    final fst = _fstWriter;
+    if (fst != null) {
+      fst.finish();
+      return;
+    }
     _flushBuffer();
     await _outFileSink.flush();
     await _outFileSink.close();
@@ -418,7 +568,9 @@ class WaveformService implements ModuleService {
   Map<String, Object> toJson() => {
         'outputPath': outputPath,
         'format': format.name,
-        'signalCount': _signalToMarkerMap.length,
+        'signalCount': format == WaveOutputFormat.fst
+            ? _signalToFstHandle.length
+            : _signalToMarkerMap.length,
         'timescale': timescale,
         if (startTime != null) 'startTime': startTime!,
         if (stopTime != null) 'stopTime': stopTime!
