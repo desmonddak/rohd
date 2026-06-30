@@ -43,10 +43,20 @@ help:
 	@echo "Remote:    $(REMOTE_EXT_DIR)"
 
 # ---------------------------------------------------------------------------
+# Dependencies
+# ---------------------------------------------------------------------------
+
+# Install npm dependencies (including TypeScript) if missing or out of date
+node_modules: package.json
+	@echo "Installing npm dependencies..."
+	@npm install
+	@touch node_modules
+
+# ---------------------------------------------------------------------------
 # Compile
 # ---------------------------------------------------------------------------
 
-$(COMPILE_STAMP): $(TS_SOURCES) tsconfig.json package.json
+$(COMPILE_STAMP): $(TS_SOURCES) tsconfig.json package.json node_modules
 	@echo "Compiling TypeScript..."
 	@npx tsc -p ./
 	@touch $(COMPILE_STAMP)
