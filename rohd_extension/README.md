@@ -104,41 +104,63 @@ in the generated output back to the Dart source location where it was
 constructed.  The extension uses FLC data to navigate from a schematic or
 waveform viewer directly to the ROHD Dart source.
 
-### FLC JSON Format (v2)
+### FLC JSON Format (v6)
 
-An `.flc.json` file has a shared file table and per-module signal/instance
-entries:
+An `.flc.json` file uses a shared ROHD source file table plus a per-module
+trie of source frames.  Each trie leaf is a compact symbol string for a
+signal or submodule instance:
 
 ```json
 {
-  "version": 2,
+  "version": 6,
   "files": [
     "lib/src/my_module.dart",
     "lib/src/modules/gates.dart"
   ],
   "modules": {
     "Top": {
-      "svFile": "Top.sv",
-      "signals": {
-        "a":  { "sv": "2:19", "src": ["0:15:9"] },
-        "b":  { "sv": "3:20", "src": ["0:16:15"] }
+      "outputFiles": {
+        "sv": ["Top.sv"],
+        "sc": ["Top.cpp"]
       },
-      "instances": {
-        "inner": { "sv": "7:1", "src": ["0:6:20", "0:17:17"] }
-      }
+      "tree": [
+        [
+          "0:6:20",
+          ["0:15:9", "a@sv:2:19,8:7;sc:44:5"],
+          ["0:16:15", "b@sv:3:20~originalB"],
+          ["1:22:3", "*inner@sv:7:1"]
+        ]
+      ]
     }
   }
 }
 ```
 
-- **`files`** — array of workspace-relative paths, indexed by the first
-  number in each trace entry.
-- **`"0:15:9"`** — file index 0, line 15, column 9.
-- **`sv`** — optional line:column in the generated `.sv` file.
-- **`src`** — one or more Dart source locations (multiple entries represent
-  the construction call stack, innermost first).
-- A signal may use the compact form (bare array `["0:15:9"]`) when there
-  is no SV mapping, or the enriched form (object with `sv`/`src`).
+- **`version`** — v6 is the current format. The extension can still parse
+  v5; other explicit versions are rejected.
+- **`files`** — array of ROHD source paths, indexed by the first number in
+  each trie frame.
+- **`outputFiles`** — map from output language to generated file list, for
+  example `"sv": ["Top.sv"]` or `"sc": ["Top.cpp"]`. The first file for
+  each language is the canonical lookup target.
+- **`tree`** — list of trie root nodes. Each node starts with a source frame
+  string, then contains child nodes and/or symbol strings that share that
+  source-frame prefix.
+- **`"0:15:9"`** — ROHD source frame: file index 0, line 15, column 9.
+  The column is optional and defaults to 1.
+- **`"a@sv:2:19,8:7;sc:44:5"`** — signal `a`, with two SystemVerilog
+  output positions and one SystemC output position. Output-language groups
+  are separated by semicolons; entries within one language are separated by
+  commas. The language tag appears on the first entry in the group, so
+  `sv:2:19,8:7` means `sv:2:19` and `sv:8:7`.
+- **`"b@sv:3:20~originalB"`** — canonical signal name `b`, original source
+  name `originalB`. Lookups may use either name.
+- **`"*inner@sv:7:1"`** — submodule instance `inner`. Instance symbols are
+  prefixed with `*`; signal symbols are not.
+
+Source frames accumulate along the trie path from outermost to innermost.
+When the extension opens ROHD source frames, it presents them innermost first
+so the construction site closest to the signal or instance is selected first.
 
 ## Commands
 
