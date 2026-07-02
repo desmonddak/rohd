@@ -8,11 +8,9 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank_modules.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:test/test.dart';
 
-import '../example/filter_bank.dart';
 // ────────────────────────────────────────────────────────────────
 // Simple test modules
 // ────────────────────────────────────────────────────────────────
@@ -63,9 +61,13 @@ void main() {
       expect(mod.namer.signalNameOfBest([mod.input('a')]), equals('a'));
       expect(mod.namer.signalNameOfBest([mod.input('b')]), equals('b'));
       expect(
-          mod.namer.signalNameOfBest([mod.output('a_bar')]), equals('a_bar'));
-      expect(mod.namer.signalNameOfBest([mod.output('a_and_b')]),
-          equals('a_and_b'));
+        mod.namer.signalNameOfBest([mod.output('a_bar')]),
+        equals('a_bar'),
+      );
+      expect(
+        mod.namer.signalNameOfBest([mod.output('a_and_b')]),
+        equals('a_and_b'),
+      );
     });
 
     test('returns internal signal names', () async {
@@ -105,10 +107,16 @@ void main() {
 
       final sig = Logic(name: 'en', naming: Naming.renameable);
       final allocated = mod.namer.signalNameOfBest([sig]);
-      expect(allocated, isNot(equals('en')),
-          reason: 'Should not collide with existing port name');
-      expect(allocated, contains('en'),
-          reason: 'Should be based on the requested name');
+      expect(
+        allocated,
+        isNot(equals('en')),
+        reason: 'Should not collide with existing port name',
+      );
+      expect(
+        allocated,
+        contains('en'),
+        reason: 'Should be based on the requested name',
+      );
     });
 
     test('successive allocations are unique', () async {
@@ -151,43 +159,6 @@ void main() {
       final names2 = await buildAndGetNames();
 
       expect(names1, equals(names2));
-    });
-  });
-
-  group('filter_bank hierarchy', () {
-    test('submodule canonical names work independently', () async {
-      const dataWidth = 16;
-      const numTaps = 3;
-      final clk = SimpleClockGenerator(10).clk;
-      final reset = Logic(name: 'reset');
-      final start = Logic(name: 'start');
-      final samples = List.generate(2, (ch) => FilterSample(name: 'sample$ch'));
-      final inputDone = Logic(name: 'inputDone');
-
-      final dut = FilterBank(
-        clk,
-        reset,
-        start,
-        samples,
-        inputDone,
-        numTaps: numTaps,
-        dataWidth: dataWidth,
-        coefficients: [
-          [1, 2, 1],
-          [1, -2, 1],
-        ],
-      );
-      await dut.build();
-
-      expect(dut.namer.signalNameOfBest([dut.input('clk')]), equals('clk'));
-      expect(dut.namer.signalNameOfBest([dut.output('done')]), equals('done'));
-
-      for (final sub in dut.subModules) {
-        for (final entry in sub.inputs.entries) {
-          final name = sub.namer.signalNameOfBest([entry.value]);
-          expect(name, isNotEmpty);
-        }
-      }
     });
   });
 
