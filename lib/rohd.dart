@@ -4,10 +4,12 @@
 export 'src/diagnostics/inspector_service.dart';
 export 'src/diagnostics/module_service.dart';
 export 'src/diagnostics/module_services.dart';
+export 'src/diagnostics/waveform_data_service.dart';
 export 'src/diagnostics/waveform_service.dart';
 export 'src/exceptions/exceptions.dart';
 export 'src/external.dart';
 export 'src/finite_state_machine.dart';
+export 'src/fst/fst_block_reader.dart';
 export 'src/fst/fst_types.dart';
 export 'src/fst/fst_writer.dart';
 export 'src/interfaces/interfaces.dart';

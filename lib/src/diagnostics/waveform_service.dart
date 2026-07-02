@@ -14,8 +14,6 @@ import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/fst/fst_types.dart';
-import 'package:rohd/src/fst/fst_writer.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
