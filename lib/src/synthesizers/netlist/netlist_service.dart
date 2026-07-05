@@ -162,10 +162,10 @@ class NetlistService extends OutputService {
   /// names. For the full netlist document, use [json].
   @override
   Map<String, Object?> toJson() => <String, Object?>{
-    'creator': 'ROHD netlist synthesizer',
-    'version': version,
-    'modules': moduleNames.toList(),
-  };
+        'creator': 'ROHD netlist synthesizer',
+        'version': version,
+        'modules': moduleNames.toList(),
+      };
 
   /// Returns the netlist JSON for a single module [definitionName].
   ///
