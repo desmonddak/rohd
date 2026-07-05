@@ -8,7 +8,6 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 
@@ -154,9 +153,7 @@ class NetlistService extends OutputService {
         'No output path provided: pass a path to write() or set outputPath.',
       );
     }
-    File(target)
-      ..parent.createSync(recursive: true)
-      ..writeAsStringSync(_fullJson);
+    writeTextFile(target, _fullJson);
   }
 
   /// Returns a JSON-serialisable summary of the netlist synthesis.
@@ -165,10 +162,10 @@ class NetlistService extends OutputService {
   /// names. For the full netlist document, use [json].
   @override
   Map<String, Object?> toJson() => <String, Object?>{
-        'creator': 'ROHD netlist synthesizer',
-        'version': version,
-        'modules': moduleNames.toList(),
-      };
+    'creator': 'ROHD netlist synthesizer',
+    'version': version,
+    'modules': moduleNames.toList(),
+  };
 
   /// Returns the netlist JSON for a single module [definitionName].
   ///
