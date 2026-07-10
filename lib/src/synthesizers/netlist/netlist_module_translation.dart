@@ -12,6 +12,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -53,14 +54,13 @@ class NetlistModuleTranslation {
     required NetlistCellMapper netlistCellMapper,
     required bool Function(Module module) generatesDefinition,
     required String Function(Module module) getInstanceTypeOfModule,
-  }) : _netlistCellMapper = netlistCellMapper,
-       _generatesDefinition = generatesDefinition,
-       _getInstanceTypeOfModule = getInstanceTypeOfModule,
-       synthDef =
-           module is SystemVerilog &&
-               module.generatedDefinitionType == DefinitionGenerationType.none
-           ? null
-           : NetlistSynthModuleDefinition(module);
+  })  : _netlistCellMapper = netlistCellMapper,
+        _generatesDefinition = generatesDefinition,
+        _getInstanceTypeOfModule = getInstanceTypeOfModule,
+        synthDef = module is SystemVerilog &&
+                module.generatedDefinitionType == DefinitionGenerationType.none
+            ? null
+            : NetlistSynthModuleDefinition(module);
 
   /// Allocates the next wire identifier.
   int allocateWireId() => nextId++;
@@ -427,11 +427,10 @@ class NetlistModuleTranslation {
   }) {
     var constantIndex = 0;
     final emittedConstantWires = <int>{};
-    for (final entry
-        in synthLogicIds.entries
-            .where((entry) => entry.key.isConstant)
-            .where((entry) => !blockedConstSynthLogics.contains(entry.key))
-            .where((entry) => entry.value.isNotEmpty)) {
+    for (final entry in synthLogicIds.entries
+        .where((entry) => entry.key.isConstant)
+        .where((entry) => !blockedConstSynthLogics.contains(entry.key))
+        .where((entry) => entry.value.isNotEmpty)) {
       final constant = NetlistUtils.constValueFromSynthLogic(entry.key);
       if (constant == null) {
         continue;
@@ -513,8 +512,7 @@ class NetlistModuleTranslation {
   ) {
     final renames = <String, String>{};
     for (final portName in connections.keys.toList()) {
-      final synthLogic =
-          instance.inputMapping[portName] ??
+      final synthLogic = instance.inputMapping[portName] ??
           instance.outputMapping[portName] ??
           instance.inOutMapping[portName];
       if (synthLogic == null) {

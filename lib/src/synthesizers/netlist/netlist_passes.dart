@@ -14,6 +14,8 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 
 /// Post-processing optimization passes for netlist synthesis.
 ///
@@ -54,24 +56,28 @@ class NetlistPasses {
   static Map<String, Map<String, Object?>> _copyCells(
     Map<String, Map<String, Object?>> source, {
     required bool includeConnections,
-  }) => {
-    for (final entry in source.entries)
-      entry.key: _copyObjectMap(
-        includeConnections
-            ? entry.value
-            : (Map<String, Object?>.of(entry.value)..remove('connections')),
-      ),
-  };
+  }) =>
+      {
+        for (final entry in source.entries)
+          entry.key: _copyObjectMap(
+            includeConnections
+                ? entry.value
+                : (Map<String, Object?>.of(entry.value)..remove('connections')),
+          ),
+      };
 
   static Map<String, Map<String, Object?>> _copyNestedMaps(
     Map<String, Map<String, Object?>> source,
-  ) => {
-    for (final entry in source.entries) entry.key: _copyObjectMap(entry.value),
-  };
+  ) =>
+      {
+        for (final entry in source.entries)
+          entry.key: _copyObjectMap(entry.value),
+      };
 
   static Map<String, Object?> _copyObjectMap(Map<String, Object?> source) => {
-    for (final entry in source.entries) entry.key: _copyJsonValue(entry.value),
-  };
+        for (final entry in source.entries)
+          entry.key: _copyJsonValue(entry.value),
+      };
 
   static Object? _copyJsonValue(Object? value) {
     if (value is Map) {

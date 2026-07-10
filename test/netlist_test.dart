@@ -13,7 +13,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank_modules.dart';
+import 'package:rohd/src/examples/filter_bank/filter_bank_modules.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart';
@@ -89,8 +91,9 @@ Future<Map<String, dynamic>> _synthesizeAndWrite(
   String outPath,
 ) async {
   final synth = SynthBuilder(top, NetlistSynthesizer());
-  final jsonStr =
-      (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(top);
+  final jsonStr = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+    top,
+  );
   if (!_isJS) {
     final file = File(outPath);
     await file.create(recursive: true);
@@ -112,8 +115,10 @@ FilterBank _buildFilterBank({
   final clk = SimpleClockGenerator(10).clk;
   final reset = Logic(name: 'reset');
   final start = Logic(name: 'start');
-  final samples = List.generate(coefficients.length,
-      (ch) => FilterSample(dataWidth: dataWidth, name: 'sample$ch'));
+  final samples = List.generate(
+    coefficients.length,
+    (ch) => FilterSample(dataWidth: dataWidth, name: 'sample$ch'),
+  );
   final inputDone = Logic(name: 'inputDone');
 
   return FilterBank(
@@ -144,12 +149,17 @@ void main() {
 
   group('Example netlist smoke tests', () {
     test('Counter', () async {
-      final counter = Counter(Logic(name: 'en'), Logic(name: 'reset'),
-          SimpleClockGenerator(10).clk);
+      final counter = Counter(
+        Logic(name: 'en'),
+        Logic(name: 'reset'),
+        SimpleClockGenerator(10).clk,
+      );
       await counter.build();
 
-      final modules =
-          await _synthesizeAndWrite(counter, 'build/Counter.rohd.json');
+      final modules = await _synthesizeAndWrite(
+        counter,
+        'build/Counter.rohd.json',
+      );
       expect(modules, isNotEmpty);
 
       final topMod = modules[counter.definitionName] as Map<String, dynamic>;
@@ -168,8 +178,10 @@ void main() {
       );
       await fir.build();
 
-      final modules =
-          await _synthesizeAndWrite(fir, 'build/FirFilter.rohd.json');
+      final modules = await _synthesizeAndWrite(
+        fir,
+        'build/FirFilter.rohd.json',
+      );
       expect(modules, isNotEmpty);
       if (!_isJS) {
         expect(File('build/FirFilter.rohd.json').existsSync(), isTrue);
@@ -185,8 +197,10 @@ void main() {
       );
       await la.build();
 
-      final modules =
-          await _synthesizeAndWrite(la, 'build/LogicArrayExample.rohd.json');
+      final modules = await _synthesizeAndWrite(
+        la,
+        'build/LogicArrayExample.rohd.json',
+      );
       expect(modules, isNotEmpty);
     });
 
@@ -198,8 +212,10 @@ void main() {
       );
       await oven.build();
 
-      final modules =
-          await _synthesizeAndWrite(oven, 'build/OvenModule.rohd.json');
+      final modules = await _synthesizeAndWrite(
+        oven,
+        'build/OvenModule.rohd.json',
+      );
       expect(modules, isNotEmpty);
     });
 
@@ -223,11 +239,16 @@ void main() {
       final fb = _buildFilterBank();
       await fb.build();
 
-      final modules =
-          await _synthesizeAndWrite(fb, 'build/FilterBank.smoke.rohd.json');
+      final modules = await _synthesizeAndWrite(
+        fb,
+        'build/FilterBank.smoke.rohd.json',
+      );
       expect(modules, isNotEmpty);
-      expect(modules.length, greaterThan(1),
-          reason: 'FilterBank should have sub-module definitions');
+      expect(
+        modules.length,
+        greaterThan(1),
+        reason: 'FilterBank should have sub-module definitions',
+      );
     });
   });
 
@@ -244,34 +265,38 @@ void main() {
       expect(decoded, contains('modules'));
     });
 
-    test('top module is present with correct ports and top attribute',
-        () async {
-      final mod = _InverterModule(Logic(name: 'inp'));
-      await mod.build();
+    test(
+      'top module is present with correct ports and top attribute',
+      () async {
+        final mod = _InverterModule(Logic(name: 'inp'));
+        await mod.build();
 
-      final json = NetlistSynthesizer().synthesizeToJson(mod);
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      final modules = decoded['modules'] as Map<String, dynamic>;
-      expect(modules, contains(mod.definitionName));
+        final json = NetlistSynthesizer().synthesizeToJson(mod);
+        final decoded = jsonDecode(json) as Map<String, dynamic>;
+        final modules = decoded['modules'] as Map<String, dynamic>;
+        expect(modules, contains(mod.definitionName));
 
-      final topMod = modules[mod.definitionName] as Map<String, dynamic>;
+        final topMod = modules[mod.definitionName] as Map<String, dynamic>;
 
-      // Port directions
-      final ports = topMod['ports'] as Map<String, dynamic>;
-      expect(ports, contains('inp'));
-      expect(ports, contains('out'));
-      expect((ports['inp'] as Map)['direction'], equals('input'));
-      expect((ports['out'] as Map)['direction'], equals('output'));
+        // Port directions
+        final ports = topMod['ports'] as Map<String, dynamic>;
+        expect(ports, contains('inp'));
+        expect(ports, contains('out'));
+        expect((ports['inp'] as Map)['direction'], equals('input'));
+        expect((ports['out'] as Map)['direction'], equals('output'));
 
-      // Top attribute
-      final attrs = topMod['attributes'] as Map<String, dynamic>?;
-      expect(attrs, isNotNull);
-      expect(attrs!['top'], equals(1));
-    });
+        // Top attribute
+        final attrs = topMod['attributes'] as Map<String, dynamic>?;
+        expect(attrs, isNotNull);
+        expect(attrs!['top'], equals(1));
+      },
+    );
 
     test('requested submodule can be synthesized as top', () async {
-      final wrapper =
-          _CompositeWrapperModule(Logic(name: 'a'), Logic(name: 'b'));
+      final wrapper = _CompositeWrapperModule(
+        Logic(name: 'a'),
+        Logic(name: 'b'),
+      );
       await wrapper.build();
 
       final submodule = wrapper.child;
@@ -297,8 +322,10 @@ void main() {
     test('port bit widths match module interface', () async {
       const width = 16;
       final mod = _AdderModule(
-          Logic(name: 'a', width: width), Logic(name: 'b', width: width),
-          width: width);
+        Logic(name: 'a', width: width),
+        Logic(name: 'b', width: width),
+        width: width,
+      );
       await mod.build();
 
       final json = NetlistSynthesizer().synthesizeToJson(mod);
@@ -330,24 +357,28 @@ void main() {
       expect(hasConnections, isTrue);
     });
 
-    test('generateCombinedJson and synthesizeToJson produce same module keys',
-        () async {
-      final mod = _InverterModule(Logic(name: 'inp'));
-      await mod.build();
+    test(
+      'generateCombinedJson and synthesizeToJson produce same module keys',
+      () async {
+        final mod = _InverterModule(Logic(name: 'inp'));
+        await mod.build();
 
-      final synthesizer = NetlistSynthesizer();
-      final synth = SynthBuilder(mod, synthesizer);
+        final synthesizer = NetlistSynthesizer();
+        final synth = SynthBuilder(mod, synthesizer);
 
-      final fromCombined = synthesizer.generateCombinedJson(synth, mod);
-      final fromConvenience = NetlistSynthesizer().synthesizeToJson(mod);
+        final fromCombined = synthesizer.generateCombinedJson(synth, mod);
+        final fromConvenience = NetlistSynthesizer().synthesizeToJson(mod);
 
-      final combinedModules =
-          (jsonDecode(fromCombined) as Map)['modules'] as Map;
-      final convenienceModules =
-          (jsonDecode(fromConvenience) as Map)['modules'] as Map;
-      expect(combinedModules.keys.toSet(),
-          equals(convenienceModules.keys.toSet()));
-    });
+        final combinedModules =
+            (jsonDecode(fromCombined) as Map)['modules'] as Map;
+        final convenienceModules =
+            (jsonDecode(fromConvenience) as Map)['modules'] as Map;
+        expect(
+          combinedModules.keys.toSet(),
+          equals(convenienceModules.keys.toSet()),
+        );
+      },
+    );
   });
 
   // ── SynthBuilder ──────────────────────────────────────────────────────
@@ -379,8 +410,10 @@ void main() {
       final mod = _InverterModule(Logic(name: 'inp'));
       await mod.build();
 
-      final fileContents =
-          SynthBuilder(mod, NetlistSynthesizer()).getSynthFileContents();
+      final fileContents = SynthBuilder(
+        mod,
+        NetlistSynthesizer(),
+      ).getSynthFileContents();
       expect(fileContents, isNotEmpty);
       for (final fc in fileContents) {
         expect(fc.name, isNotEmpty);
@@ -393,8 +426,10 @@ void main() {
 
   group('NetlistSynthesisResult maps', () {
     test('ports map has direction and bits for each port', () async {
-      final mod =
-          _AdderModule(Logic(name: 'a', width: 8), Logic(name: 'b', width: 8));
+      final mod = _AdderModule(
+        Logic(name: 'a', width: 8),
+        Logic(name: 'b', width: 8),
+      );
       await mod.build();
 
       final result = SynthBuilder(mod, NetlistSynthesizer())
@@ -431,8 +466,9 @@ void main() {
 
       final synth = SynthBuilder(mod, NetlistSynthesizer());
       final modulesMap = NetlistPasses.collectModuleEntries(
-          synth.synthesisResults,
-          topModule: mod);
+        synth.synthesisResults,
+        topModule: mod,
+      );
 
       expect(modulesMap, contains(mod.definitionName));
       expect(modulesMap.length, greaterThan(1));
@@ -480,8 +516,9 @@ void main() {
       final mod = _CompositeModule(Logic(name: 'a'), Logic(name: 'b'));
       await mod.build();
 
-      final slimSynth =
-          NetlistSynthesizer(options: const NetlistOptions(slimMode: true));
+      final slimSynth = NetlistSynthesizer(
+        options: const NetlistOptions(slimMode: true),
+      );
       final json = slimSynth.synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       final modules = decoded['modules'] as Map<String, dynamic>;
@@ -507,11 +544,16 @@ void main() {
       final mod = _buildFilterBank();
       await mod.build();
 
-      final modules =
-          await _synthesizeAndWrite(mod, 'build/FilterBank.rohd.json');
+      final modules = await _synthesizeAndWrite(
+        mod,
+        'build/FilterBank.rohd.json',
+      );
       expect(modules, isNotEmpty);
-      expect(modules.length, greaterThan(1),
-          reason: 'FilterBank should have sub-module definitions');
+      expect(
+        modules.length,
+        greaterThan(1),
+        reason: 'FilterBank should have sub-module definitions',
+      );
 
       // Top module should have cells
       final topMod = modules[mod.definitionName] as Map<String, dynamic>;
@@ -530,8 +572,11 @@ void main() {
           modules.keys.where((k) => k.contains('FilterChannel')).toList();
       // Two channels with different coefficients should produce
       // separate definitions (not fully deduplicated).
-      expect(channelDefs, isNotEmpty,
-          reason: 'FilterChannel definitions should be present');
+      expect(
+        channelDefs,
+        isNotEmpty,
+        reason: 'FilterChannel definitions should be present',
+      );
     });
 
     test('all module entries have ports, cells, and netnames', () async {
@@ -546,8 +591,11 @@ void main() {
         final data = entry.value;
         expect(data, contains('ports'), reason: '${entry.key} missing ports');
         expect(data, contains('cells'), reason: '${entry.key} missing cells');
-        expect(data, contains('netnames'),
-            reason: '${entry.key} missing netnames');
+        expect(
+          data,
+          contains('netnames'),
+          reason: '${entry.key} missing netnames',
+        );
       }
     });
 
@@ -562,9 +610,12 @@ void main() {
           in synth.synthesisResults.whereType<NetlistSynthesisResult>()) {
         for (final port in result.ports.entries) {
           final dir = port.value['direction']! as String;
-          expect(['input', 'output', 'inout'], contains(dir),
-              reason: '${result.instanceTypeName}.${port.key} '
-                  'has invalid direction');
+          expect(
+            ['input', 'output', 'inout'],
+            contains(dir),
+            reason: '${result.instanceTypeName}.${port.key} '
+                'has invalid direction',
+          );
         }
       }
     });
@@ -762,8 +813,11 @@ void main() {
             }
           }
 
-          expect(expanded, normalBits,
-              reason: 'round-trip failed for $modName.$portName');
+          expect(
+            expanded,
+            normalBits,
+            reason: 'round-trip failed for $modName.$portName',
+          );
         }
       }
     });

@@ -115,7 +115,7 @@ abstract class Module {
         ..._inputs.values,
         ..._outputs.values,
         ..._inOuts.values,
-        ...internalSignals
+        ...internalSignals,
       ]);
 
   /// Accesses the [Logic] associated with this [Module]s [input] port
@@ -125,14 +125,16 @@ abstract class Module {
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw PortDoesNotExistException(
-          'Input name "$name" not found as an input to this Module.');
+          'Input name "$name" not found as an input to this Module.',
+        );
 
   /// The original `source` provided to the creation of the [input] port [name]
   /// via [addInput] or [addInputArray].
   Logic inputSource(String name) =>
       _inputSources[name] ??
       (throw PortDoesNotExistException(
-          '$name is not an input of this Module.'));
+        '$name is not an input of this Module.',
+      ));
 
   /// Provides the [input] named [name] if it exists, otherwise `null`.
   ///
@@ -147,7 +149,8 @@ abstract class Module {
   Logic output(String name) => _outputs.containsKey(name)
       ? _outputs[name]!
       : throw PortDoesNotExistException(
-          'Output name "$name" not found as an output of this Module.');
+          'Output name "$name" not found as an output of this Module.',
+        );
 
   /// Provides the [output] named [name] if it exists, otherwise `null`.
   Logic? tryOutput(String name) => _outputs[name];
@@ -159,14 +162,16 @@ abstract class Module {
   Logic inOut(String name) => _inOuts.containsKey(name)
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
-          'InOut name "$name" not found as an in/out of this Module.');
+          'InOut name "$name" not found as an in/out of this Module.',
+        );
 
   /// The original `source` provided to the creation of the [inOut] port [name]
   /// via [addInOut] or [addInOutArray].
   Logic inOutSource(String name) =>
       _inOutSources[name] ??
       (throw PortDoesNotExistException(
-          '$name is not an inOut of this Module.'));
+        '$name is not an inOut of this Module.',
+      ));
 
   /// Provides the [inOut] named [name] if it exists, otherwise `null`.
   Logic? tryInOut(String name) => _inOuts[name];
@@ -208,7 +213,9 @@ abstract class Module {
   String get uniqueInstanceName => hasBuilt || reserveName
       ? _uniqueInstanceName
       : throw ModuleNotBuiltException(
-          this, 'Module must be built to access uniquified name.');
+          this,
+          'Module must be built to access uniquified name.',
+        );
   String _uniqueInstanceName;
 
   /// A stable identity used to memoize this module's canonical instance name
@@ -252,15 +259,17 @@ abstract class Module {
   ///
   /// If [reserveDefinitionName] is set, then code generation will fail if
   /// it is unable to keep from uniquifying [definitionName] to avoid conflicts.
-  Module(
-      {this.name = 'unnamed_module',
-      this.reserveName = false,
-      String? definitionName,
-      this.reserveDefinitionName = false})
-      : _uniqueInstanceName =
+  Module({
+    this.name = 'unnamed_module',
+    this.reserveName = false,
+    String? definitionName,
+    this.reserveDefinitionName = false,
+  })  : _uniqueInstanceName =
             Naming.validatedName(name, reserveName: reserveName) ?? name,
-        _definitionName = Naming.validatedName(definitionName,
-            reserveName: reserveDefinitionName);
+        _definitionName = Naming.validatedName(
+          definitionName,
+          reserveName: reserveDefinitionName,
+        );
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
@@ -271,7 +280,9 @@ abstract class Module {
   Iterable<Module> hierarchy() {
     if (!hasBuilt) {
       throw ModuleNotBuiltException(
-          this, 'Module must be built before accessing hierarchy.');
+        this,
+        'Module must be built before accessing hierarchy.',
+      );
     }
     Module? pModule = this;
     final hierarchyQueue = Queue<Module>();
@@ -316,7 +327,8 @@ abstract class Module {
   Future<void> build({NetlistOptions? netlistOptions}) async {
     if (hasBuilt) {
       throw Exception(
-          'This Module has already been built, and can only be built once.');
+        'This Module has already been built, and can only be built once.',
+      );
     }
 
     // construct the list of modules within this module
@@ -333,8 +345,9 @@ abstract class Module {
     final uniquifier = Uniquifier();
     for (final module in _subModules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
-          initialName: Sanitizer.sanitizeSV(module.name),
-          reserved: module.reserveName);
+        initialName: Sanitizer.sanitizeSV(module.name),
+        reserved: module.reserveName,
+      );
     }
 
     _checkValidHierarchy(visited: {});
@@ -353,23 +366,26 @@ abstract class Module {
   ///
   /// - No module exists in two separate hierarchies.
   /// - No module is a submodule of itself.
-  void _checkValidHierarchy(
-      {required Map<Module, List<Module>> visited,
-      List<Module> hierarchy = const []}) {
+  void _checkValidHierarchy({
+    required Map<Module, List<Module>> visited,
+    List<Module> hierarchy = const [],
+  }) {
     final newHierarchy = [...hierarchy, this];
 
     if (hierarchy.contains(this)) {
       final loopHierarchy = _hierarchyListToString(newHierarchy);
       throw InvalidHierarchyException(
-          'Module $this is a submodule of itself: $loopHierarchy');
+        'Module $this is a submodule of itself: $loopHierarchy',
+      );
     }
 
     if (visited.containsKey(this)) {
       final otherHierarchy = _hierarchyListToString(visited[this]!);
       final thisHierarchy = _hierarchyListToString(hierarchy);
       throw InvalidHierarchyException(
-          'Module $this exists at more than one hierarchy: '
-          '$otherHierarchy and $thisHierarchy');
+        'Module $this exists at more than one hierarchy: '
+        '$otherHierarchy and $thisHierarchy',
+      );
     }
 
     visited[this] = newHierarchy;
@@ -387,9 +403,11 @@ abstract class Module {
   /// Adds a [Module] to this as a subModule.
   Future<void> _addAndBuildModule(Module module) async {
     if (module.parent != null) {
-      throw Exception('This Module "$this" already has a parent. '
-          'If you are hitting this as a user of ROHD, please file '
-          'a bug at https://github.com/intel/rohd/issues.');
+      throw Exception(
+        'This Module "$this" already has a parent. '
+        'If you are hitting this as a user of ROHD, please file '
+        'a bug at https://github.com/intel/rohd/issues.',
+      );
     }
 
     _subModules.add(module);
@@ -419,8 +437,10 @@ abstract class Module {
   static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
-  Future<void> _traceInputForModuleContents(Logic signal,
-      {bool dontAddSignal = false}) async {
+  Future<void> _traceInputForModuleContents(
+    Logic signal, {
+    bool dontAddSignal = false,
+  }) async {
     if (isOutput(signal) || _inOutDrivers.contains(signal)) {
       return;
     }
@@ -456,20 +476,28 @@ abstract class Module {
           await _addAndBuildModule(subModule);
         }
         for (final subModuleOutput in subModule._outputs.values) {
-          await _traceInputForModuleContents(subModuleOutput,
-              dontAddSignal: true);
+          await _traceInputForModuleContents(
+            subModuleOutput,
+            dontAddSignal: true,
+          );
         }
         for (final subModuleInput in subModule._inputs.values) {
-          await _traceOutputForModuleContents(subModuleInput,
-              dontAddSignal: true);
+          await _traceOutputForModuleContents(
+            subModuleInput,
+            dontAddSignal: true,
+          );
         }
 
         for (final subModuleInOutDriver in subModule._inOutDrivers) {
           final subModDontAddSignal = subModuleInOutDriver.isPort;
-          await _traceInputForModuleContents(subModuleInOutDriver,
-              dontAddSignal: subModDontAddSignal);
-          await _traceOutputForModuleContents(subModuleInOutDriver,
-              dontAddSignal: subModDontAddSignal);
+          await _traceInputForModuleContents(
+            subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal,
+          );
+          await _traceOutputForModuleContents(
+            subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal,
+          );
         }
       } else {
         if (!dontAddSignal &&
@@ -480,17 +508,25 @@ abstract class Module {
 
           // handle expanding the search for arrays
           if (signal.parentStructure != null) {
-            await _traceInputForModuleContents(signal.parentStructure!,
-                dontAddSignal: signal.isPort);
-            await _traceOutputForModuleContents(signal.parentStructure!,
-                dontAddSignal: signal.isPort);
+            await _traceInputForModuleContents(
+              signal.parentStructure!,
+              dontAddSignal: signal.isPort,
+            );
+            await _traceOutputForModuleContents(
+              signal.parentStructure!,
+              dontAddSignal: signal.isPort,
+            );
           }
           if (signal is LogicStructure) {
             for (final elem in signal.elements) {
-              await _traceInputForModuleContents(elem,
-                  dontAddSignal: elem.isPort);
-              await _traceOutputForModuleContents(elem,
-                  dontAddSignal: elem.isPort);
+              await _traceInputForModuleContents(
+                elem,
+                dontAddSignal: elem.isPort,
+              );
+              await _traceOutputForModuleContents(
+                elem,
+                dontAddSignal: elem.isPort,
+              );
             }
           }
 
@@ -501,10 +537,11 @@ abstract class Module {
 
         if (!dontAddSignal && isInput(signal)) {
           throw PortRulesViolationException(
-              this,
-              signal.name,
-              'Input $signal of module $this is dependent on'
-              ' another input of the same module.');
+            this,
+            signal.name,
+            'Input $signal of module $this is dependent on'
+            ' another input of the same module.',
+          );
         }
 
         for (final dstConnection in signal.dstConnections) {
@@ -524,13 +561,15 @@ abstract class Module {
         // extra searching in both directions for nets
         if (signal.isNet && !isPort(signal)) {
           await _traceOutputForModuleContents(signal);
-          for (final srcConnection
-              in signal.srcConnections.where((element) => element.isNet)) {
+          for (final srcConnection in signal.srcConnections.where(
+            (element) => element.isNet,
+          )) {
             await _traceInputForModuleContents(srcConnection);
             await _traceOutputForModuleContents(srcConnection);
           }
-          for (final dstConnection
-              in signal.dstConnections.where((element) => element.isNet)) {
+          for (final dstConnection in signal.dstConnections.where(
+            (element) => element.isNet,
+          )) {
             await _traceInputForModuleContents(dstConnection);
             await _traceOutputForModuleContents(dstConnection);
           }
@@ -538,16 +577,19 @@ abstract class Module {
       }
     } on PortRulesViolationException catch (e) {
       throw PortRulesViolationException.trace(
-          module: this,
-          signal: signal,
-          lowerException: e,
-          traceDirection: 'from inputs');
+        module: this,
+        signal: signal,
+        lowerException: e,
+        traceDirection: 'from inputs',
+      );
     }
   }
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its outputs.
-  Future<void> _traceOutputForModuleContents(Logic signal,
-      {bool dontAddSignal = false}) async {
+  Future<void> _traceOutputForModuleContents(
+    Logic signal, {
+    bool dontAddSignal = false,
+  }) async {
     if (isInput(signal) || _inOutDrivers.contains(signal)) {
       return;
     }
@@ -583,20 +625,28 @@ abstract class Module {
           await _addAndBuildModule(subModule);
         }
         for (final subModuleInput in subModule._inputs.values) {
-          await _traceOutputForModuleContents(subModuleInput,
-              dontAddSignal: true);
+          await _traceOutputForModuleContents(
+            subModuleInput,
+            dontAddSignal: true,
+          );
         }
         for (final subModuleOutput in subModule._outputs.values) {
-          await _traceInputForModuleContents(subModuleOutput,
-              dontAddSignal: true);
+          await _traceInputForModuleContents(
+            subModuleOutput,
+            dontAddSignal: true,
+          );
         }
 
         for (final subModuleInOutDriver in subModule._inOutDrivers) {
           final subModDontAddSignal = subModuleInOutDriver.isPort;
-          await _traceInputForModuleContents(subModuleInOutDriver,
-              dontAddSignal: subModDontAddSignal);
-          await _traceOutputForModuleContents(subModuleInOutDriver,
-              dontAddSignal: subModDontAddSignal);
+          await _traceInputForModuleContents(
+            subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal,
+          );
+          await _traceOutputForModuleContents(
+            subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal,
+          );
         }
       } else {
         if (!dontAddSignal &&
@@ -607,17 +657,25 @@ abstract class Module {
 
           // handle expanding the search for arrays
           if (signal.parentStructure != null) {
-            await _traceOutputForModuleContents(signal.parentStructure!,
-                dontAddSignal: signal.isPort);
-            await _traceInputForModuleContents(signal.parentStructure!,
-                dontAddSignal: signal.isPort);
+            await _traceOutputForModuleContents(
+              signal.parentStructure!,
+              dontAddSignal: signal.isPort,
+            );
+            await _traceInputForModuleContents(
+              signal.parentStructure!,
+              dontAddSignal: signal.isPort,
+            );
           }
           if (signal is LogicStructure) {
             for (final elem in signal.elements) {
-              await _traceOutputForModuleContents(elem,
-                  dontAddSignal: elem.isPort);
-              await _traceInputForModuleContents(elem,
-                  dontAddSignal: elem.isPort);
+              await _traceOutputForModuleContents(
+                elem,
+                dontAddSignal: elem.isPort,
+              );
+              await _traceInputForModuleContents(
+                elem,
+                dontAddSignal: elem.isPort,
+              );
             }
           }
 
@@ -629,13 +687,15 @@ abstract class Module {
         // extra searching in both directions for nets
         if (signal.isNet && !isPort(signal)) {
           await _traceInputForModuleContents(signal);
-          for (final srcConnection
-              in signal.srcConnections.where((element) => element.isNet)) {
+          for (final srcConnection in signal.srcConnections.where(
+            (element) => element.isNet,
+          )) {
             await _traceOutputForModuleContents(srcConnection);
             await _traceInputForModuleContents(srcConnection);
           }
-          for (final dstConnection
-              in signal.dstConnections.where((element) => element.isNet)) {
+          for (final dstConnection in signal.dstConnections.where(
+            (element) => element.isNet,
+          )) {
             await _traceOutputForModuleContents(dstConnection);
             await _traceInputForModuleContents(dstConnection);
           }
@@ -643,8 +703,10 @@ abstract class Module {
 
         if (signal is LogicStructure) {
           for (final elem in signal.elements) {
-            await _traceOutputForModuleContents(elem,
-                dontAddSignal: elem.isPort);
+            await _traceOutputForModuleContents(
+              elem,
+              dontAddSignal: elem.isPort,
+            );
           }
         } else {
           for (final srcConnection in signal.srcConnections) {
@@ -654,10 +716,11 @@ abstract class Module {
       }
     } on PortRulesViolationException catch (e) {
       throw PortRulesViolationException.trace(
-          module: this,
-          signal: signal,
-          lowerException: e,
-          traceDirection: 'from outputs');
+        module: this,
+        signal: signal,
+        lowerException: e,
+        traceDirection: 'from outputs',
+      );
     }
   }
 
@@ -678,7 +741,8 @@ abstract class Module {
         inputs.containsKey(name) ||
         inOuts.containsKey(name)) {
       throw UnavailableReservedNameException.withMessage(
-          'Already defined a port with name "$name" in module "${this.name}".');
+        'Already defined a port with name "$name" in module "${this.name}".',
+      );
     }
   }
 
@@ -728,7 +792,9 @@ abstract class Module {
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inputSource].
   LogicType addTypedInput<LogicType extends Logic>(
-      String name, LogicType source) {
+    String name,
+    LogicType source,
+  ) {
     _checkForSafePortName(name);
 
     source = _validateType<LogicType>(source, isOutput: false, name: name);
@@ -740,8 +806,10 @@ abstract class Module {
     final inPort = (source.clone(name: name) as LogicType)..gets(source);
 
     if (inPort.name != name) {
-      throw PortTypeException.forIntendedName(name,
-          'The `clone` method for $source failed to update the signal name.');
+      throw PortTypeException.forIntendedName(
+        name,
+        'The `clone` method for $source failed to update the signal name.',
+      );
     }
 
     if (inPort is LogicStructure) {
@@ -832,7 +900,9 @@ abstract class Module {
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inOutSource].
   LogicType addTypedInOut<LogicType extends Logic>(
-      String name, LogicType source) {
+    String name,
+    LogicType source,
+  ) {
     _checkForSafePortName(name);
 
     if (!source.isNet) {
@@ -863,8 +933,10 @@ abstract class Module {
     final inOutPort = (source.clone(name: name) as LogicType)..gets(source);
 
     if (inOutPort.name != name) {
-      throw PortTypeException.forIntendedName(name,
-          'The `clone` method for $source failed to update the signal name.');
+      throw PortTypeException.forIntendedName(
+        name,
+        'The `clone` method for $source failed to update the signal name.',
+      );
     }
 
     if (inOutPort is LogicStructure) {
@@ -890,18 +962,22 @@ abstract class Module {
   ///
   /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  LogicArray addInputArray(String name, Logic source,
-      {List<int> dimensions = const [1],
-      int elementWidth = 1,
-      int numUnpackedDimensions = 0}) {
+  LogicArray addInputArray(
+    String name,
+    Logic source, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numUnpackedDimensions = 0,
+  }) {
     _checkForSafePortName(name);
 
     final inArr = LogicArray(
-        name: name,
-        dimensions,
-        elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions,
-        naming: Naming.reserved)
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
       ..gets(source)
       ..setAllParentModule(this);
 
@@ -929,8 +1005,11 @@ abstract class Module {
 
   /// Checks that the [logic] meets type requirements for `Typed` [Logic]s and
   /// returns a potentially modified [logic] to use.
-  LogicType _validateType<LogicType extends Logic>(LogicType logic,
-      {required String name, required bool isOutput}) {
+  LogicType _validateType<LogicType extends Logic>(
+    LogicType logic, {
+    required String name,
+    required bool isOutput,
+  }) {
     const exceptionMessage =
         'Cannot use `Const` (or `LogicStructure` with `Const`s) as a port type.'
         ' Try passing in a `Logic` or parameterizing'
@@ -975,7 +1054,9 @@ abstract class Module {
   ///
   /// The return value is the same as what is returned by [output].
   LogicType addTypedOutput<LogicType extends Logic>(
-      String name, LogicType Function({String name}) logicGenerator) {
+    String name,
+    LogicType Function({String name}) logicGenerator,
+  ) {
     _checkForSafePortName(name);
 
     // must make a new clone of it, to avoid people using ports of other modules
@@ -985,14 +1066,17 @@ abstract class Module {
 
     if (outPort.isNet || (outPort is LogicStructure && outPort.hasNets)) {
       throw PortTypeException(
-          outPort, 'Typed outputs cannot have nets in them.');
+        outPort,
+        'Typed outputs cannot have nets in them.',
+      );
     }
 
     if (outPort.name != name) {
       throw PortTypeException.forIntendedName(
-          name,
-          'The `logicGenerator` function failed to'
-          ' update the signal name on $outPort.');
+        name,
+        'The `logicGenerator` function failed to'
+        ' update the signal name on $outPort.',
+      );
     }
 
     if (outPort is LogicStructure) {
@@ -1011,19 +1095,21 @@ abstract class Module {
   /// named [name].
   ///
   /// This is very similar to [addOutput], except for [LogicArray]s.
-  LogicArray addOutputArray(String name,
-      {List<int> dimensions = const [1],
-      int elementWidth = 1,
-      int numUnpackedDimensions = 0}) {
+  LogicArray addOutputArray(
+    String name, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numUnpackedDimensions = 0,
+  }) {
     _checkForSafePortName(name);
 
     final outArr = LogicArray(
-        name: name,
-        dimensions,
-        elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions,
-        naming: Naming.reserved)
-      ..setAllParentModule(this);
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )..setAllParentModule(this);
 
     _outputs[name] = outArr;
 
@@ -1038,10 +1124,13 @@ abstract class Module {
   ///
   /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  LogicArray addInOutArray(String name, Logic source,
-      {List<int> dimensions = const [1],
-      int elementWidth = 1,
-      int numUnpackedDimensions = 0}) {
+  LogicArray addInOutArray(
+    String name,
+    Logic source, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numUnpackedDimensions = 0,
+  }) {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
@@ -1060,11 +1149,12 @@ abstract class Module {
     }
 
     final inOutArr = LogicArray.net(
-        name: name,
-        dimensions,
-        elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions,
-        naming: Naming.reserved)
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
       ..gets(source)
       ..setAllParentModule(this);
 
@@ -1082,23 +1172,30 @@ abstract class Module {
   /// Connects the [source] to this [Module] using [Interface.connectIO] and
   /// returns a copy of the [source] that can be used within this module.
   InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
-              TagType extends Enum>(InterfaceType source,
-          {Iterable<TagType>? inputTags,
-          Iterable<TagType>? outputTags,
-          Iterable<TagType>? inOutTags,
-          String Function(String original)? uniquify}) =>
+          TagType extends Enum>(
+    InterfaceType source, {
+    Iterable<TagType>? inputTags,
+    Iterable<TagType>? outputTags,
+    Iterable<TagType>? inOutTags,
+    String Function(String original)? uniquify,
+  }) =>
       (source.clone() as InterfaceType)
-        ..connectIO(this, source,
-            inputTags: inputTags,
-            outputTags: outputTags,
-            inOutTags: inOutTags,
-            uniquify: uniquify);
+        ..connectIO(
+          this,
+          source,
+          inputTags: inputTags,
+          outputTags: outputTags,
+          inOutTags: inOutTags,
+          uniquify: uniquify,
+        );
 
   /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
   /// and returns a copy of the [source] that can be used within this module.
   InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
-          InterfaceType source, PairRole role,
-          {String Function(String original)? uniquify}) =>
+    InterfaceType source,
+    PairRole role, {
+    String Function(String original)? uniquify,
+  }) =>
       (source.clone() as InterfaceType)
         ..pairConnectIO(this, source, role, uniquify: uniquify);
 
@@ -1107,7 +1204,7 @@ abstract class Module {
         '"$name" ($definitionName)  : ',
         if (_inputs.isNotEmpty) '${_inputs.keys}',
         if (_outputs.isNotEmpty) '=> ${_outputs.keys}',
-        if (_inOuts.isNotEmpty) '; ${_inOuts.keys}'
+        if (_inOuts.isNotEmpty) '; ${_inOuts.keys}',
       ].join(' ');
 
   /// Returns a pretty-print [String] of the heirarchy of all [Module]s within
