@@ -7,18 +7,22 @@
 // 2026 February 11
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Shared utility functions for netlist synthesis and post-processing passes.
 ///
 /// All methods are static — no instances are created.
+@internal
 class NetlistUtils {
   NetlistUtils._();
 
   /// Find the port name in [portMap] that corresponds to [sl].
   static String? portNameForSynthLogic(
-      SynthLogic sl, Map<String, Logic> portMap) {
+    SynthLogic sl,
+    Map<String, Logic> portMap,
+  ) {
     for (final e in portMap.entries) {
       if (sl.logics.contains(e.value)) {
         return e.key;
@@ -39,29 +43,19 @@ class NetlistUtils {
     }
   }
 
-  /// Resolves [sl] to the end of its replacement chain.
-  static SynthLogic resolveReplacement(SynthLogic sl) {
-    var r = sl;
-    while (r.replacement != null) {
-      r = r.replacement!;
-    }
-    return r;
-  }
-
   /// Create a `$buf` cell map.
   static Map<String, Object?> makeBufCell(
     int width,
     List<Object> aBits,
     List<Object> yBits,
-  ) =>
-      <String, Object?>{
-        'hide_name': 0,
-        'type': r'$buf',
-        'parameters': <String, Object?>{'WIDTH': width},
-        'attributes': <String, Object?>{},
-        'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
-        'connections': <String, List<Object>>{'A': aBits, 'Y': yBits},
-      };
+  ) => <String, Object?>{
+    'hide_name': 0,
+    'type': r'$buf',
+    'parameters': <String, Object?>{'WIDTH': width},
+    'attributes': <String, Object?>{},
+    'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
+    'connections': <String, List<Object>>{'A': aBits, 'Y': yBits},
+  };
 
   /// Collapses bit-slice ports of a Combinational/Sequential cell into
   /// aggregate ports.
@@ -105,22 +99,26 @@ class NetlistUtils {
         continue;
       }
 
-      final resolvedOutput = resolveReplacement(outputSL);
-      final resolvedInput = resolveReplacement(inputSL);
+      final resolvedOutput = outputSL.resolved;
+      final resolvedInput = inputSL.resolved;
 
       busSubsetLookup[resolvedOutput] = (bsMod, resolvedInput, bsInst);
     }
 
     // Group input ports by root signal, also tracking the BusSubset
     // instantiations that produced each port.
-    final inputGroups = <SynthLogic,
-        List<
+    final inputGroups =
+        <
+          SynthLogic,
+          List<
             (
               String portName,
               int startIdx,
               int width,
-              SynthSubModuleInstantiation bsInst
-            )>>{};
+              SynthSubModuleInstantiation bsInst,
+            )
+          >
+        >{};
 
     for (final e in instance.inputMapping.entries) {
       final portName = e.key;
@@ -128,14 +126,17 @@ class NetlistUtils {
         continue; // already filtered
       }
 
-      final resolved = resolveReplacement(e.value);
+      final resolved = e.value.resolved;
       final info = busSubsetLookup[resolved];
       if (info != null) {
         final (bsMod, rootSL, bsInst) = info;
         final width = bsMod.endIndex - bsMod.startIndex + 1;
-        inputGroups
-            .putIfAbsent(rootSL, () => [])
-            .add((portName, bsMod.startIndex, width, bsInst));
+        inputGroups.putIfAbsent(rootSL, () => []).add((
+          portName,
+          bsMod.startIndex,
+          width,
+          bsInst,
+        ));
       }
     }
 
@@ -192,14 +193,17 @@ class NetlistUtils {
     //   (Swizzle port name, bit offset within the Swizzle output,
     //    port width, resolved Swizzle output SynthLogic,
     //    SynthSubModuleInstantiation).
-    final swizzleLookup = <SynthLogic,
-        (
-      String portName,
-      int offset,
-      int width,
-      SynthLogic,
-      SynthSubModuleInstantiation
-    )>{};
+    final swizzleLookup =
+        <
+          SynthLogic,
+          (
+            String portName,
+            int offset,
+            int width,
+            SynthLogic,
+            SynthSubModuleInstantiation,
+          )
+        >{};
     for (final szInst in synthDef.subModuleInstantiations) {
       if (szInst.module is! Swizzle) {
         continue;
@@ -208,28 +212,37 @@ class NetlistUtils {
       if (outputSL == null) {
         continue;
       }
-      final resolvedOutput = resolveReplacement(outputSL);
+      final resolvedOutput = outputSL.resolved;
 
       // Swizzle inputs are in0, in1, ... with bit-0 first.
       var offset = 0;
       for (final inEntry in szInst.inputMapping.entries) {
-        final resolvedInput = resolveReplacement(inEntry.value);
+        final resolvedInput = inEntry.value.resolved;
         final w = resolvedInput.width;
-        swizzleLookup[resolvedInput] =
-            (inEntry.key, offset, w, resolvedOutput, szInst);
+        swizzleLookup[resolvedInput] = (
+          inEntry.key,
+          offset,
+          w,
+          resolvedOutput,
+          szInst,
+        );
         offset += w;
       }
     }
 
     // Group output ports by Swizzle output signal.
-    final outputGroups = <SynthLogic,
-        List<
+    final outputGroups =
+        <
+          SynthLogic,
+          List<
             (
               String portName,
               int offset,
               int width,
-              SynthSubModuleInstantiation szInst
-            )>>{};
+              SynthSubModuleInstantiation szInst,
+            )
+          >
+        >{};
 
     for (final e in instance.outputMapping.entries) {
       final portName = e.key;
@@ -237,13 +250,16 @@ class NetlistUtils {
         continue;
       }
 
-      final resolved = resolveReplacement(e.value);
+      final resolved = e.value.resolved;
       final info = swizzleLookup[resolved];
       if (info != null) {
         final (_, offset, width, swizzleOutputSL, szInst) = info;
-        outputGroups
-            .putIfAbsent(swizzleOutputSL, () => [])
-            .add((portName, offset, width, szInst));
+        outputGroups.putIfAbsent(swizzleOutputSL, () => []).add((
+          portName,
+          offset,
+          width,
+          szInst,
+        ));
       }
     }
 
@@ -264,7 +280,7 @@ class NetlistUtils {
         if (sl == null) {
           return false;
         }
-        final resolved = resolveReplacement(sl);
+        final resolved = sl.resolved;
         return resolved.isPort(parentModule);
       });
       if (hasModulePort) {
@@ -330,8 +346,10 @@ class NetlistUtils {
   /// consumers to identify which net IDs map to which field even when the
   /// signal is only partially connected (where computing offsets from the flat
   /// top-level `bits` array would be ambiguous).
-  static Map<String, Object?> buildLogicType(Logic logic,
-      [List<Object>? bits]) {
+  static Map<String, Object?> buildLogicType(
+    Logic logic, [
+    List<Object>? bits,
+  ]) {
     if (logic is LogicArray) {
       final result = <String, Object?>{
         'width': logic.width,
@@ -376,10 +394,7 @@ class NetlistUtils {
           };
         }
       }).toList();
-      return {
-        'typeName': logic.runtimeType.toString(),
-        'fields': fields,
-      };
+      return {'typeName': logic.runtimeType.toString(), 'fields': fields};
     } else {
       return {'width': logic.width};
     }
@@ -400,12 +415,11 @@ class NetlistUtils {
   }
 
   /// Check if a SynthLogic is a constant (following replacement chain).
-  static bool isConstantSynthLogic(SynthLogic sl) =>
-      resolveReplacement(sl).isConstant;
+  static bool isConstantSynthLogic(SynthLogic sl) => sl.resolved.isConstant;
 
   /// Extract the Const value from a constant SynthLogic.
   static Const? constValueFromSynthLogic(SynthLogic sl) {
-    final resolved = resolveReplacement(sl);
+    final resolved = sl.resolved;
     for (final logic in resolved.logics) {
       if (logic is Const) {
         return logic;

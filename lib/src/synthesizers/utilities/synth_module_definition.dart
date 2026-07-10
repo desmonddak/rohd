@@ -16,35 +16,6 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 
-/// A version of [BusSubset] that can be used for slicing on [LogicStructure]
-/// ports.
-class _BusSubsetForStructSlice extends BusSubset {
-  /// The stable destination [Logic] this slice drives.
-  ///
-  /// Used as the [instanceNameKey] so that, although a fresh
-  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
-  /// canonical instance name is memoized against the persistent destination
-  /// signal and therefore does not drift run-to-run.
-  final Logic _destination;
-
-  /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
-  /// [LogicStructure] port slicing.
-  _BusSubsetForStructSlice(
-    super.bus,
-    super.startIndex,
-    super.endIndex, {
-    required Logic destination,
-  })  : _destination = destination,
-        super(name: 'struct_slice');
-
-  // we override this since it's added post-build
-  @override
-  bool get hasBuilt => true;
-
-  @override
-  Object get instanceNameKey => _destination;
-}
-
 /// Represents the definition of a module.
 @internal
 class SynthModuleDefinition {
@@ -81,7 +52,7 @@ class SynthModuleDefinition {
   /// A mapping from the original [Module]s to the
   /// [SynthSubModuleInstantiation]s that represent them.
   final Map<Module, SynthSubModuleInstantiation>
-      moduleToSubModuleInstantiationMap = {};
+  moduleToSubModuleInstantiationMap = {};
 
   /// All the sub-module instantiations used within this definition which are
   /// still present (not removed).
@@ -187,7 +158,8 @@ class SynthModuleDefinition {
           parentSynthModuleDefinition: this,
         );
       } else {
-        final disallowConstName = (logic.isInput || logic.isInOut) &&
+        final disallowConstName =
+            (logic.isInput || logic.isInOut) &&
             // ignore: deprecated_member_use_from_same_package
             ((logic.parentModule is CustomSystemVerilog &&
                     // ignore: deprecated_member_use_from_same_package
@@ -195,8 +167,7 @@ class SynthModuleDefinition {
                         .expressionlessInputs
                         .contains(logic.name)) ||
                 (logic.parentModule is SystemVerilog &&
-                    (logic.parentModule! as SystemVerilog)
-                        .expressionlessInputs
+                    (logic.parentModule! as SystemVerilog).expressionlessInputs
                         .contains(logic.name)));
 
         final Naming? namingOverride;
@@ -288,7 +259,7 @@ class SynthModuleDefinition {
       internalSignals.add(leafSynth);
 
       // this is DISCONNECTED, just a module used for synthesizing
-      final subsetMod = _BusSubsetForStructSlice(
+      final subsetMod = SynthStructureSlice(
         (port.isNet ? LogicNet.new : Logic.new)(
           width: port.width,
           name: 'DUMMY',
@@ -316,12 +287,12 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-      : assert(
-            !(module is SystemVerilog &&
-                module.generatedDefinitionType ==
-                    DefinitionGenerationType.none),
-            'Do not build a definition for a module'
-            ' which generates no definition!') {
+    : assert(
+        !(module is SystemVerilog &&
+            module.generatedDefinitionType == DefinitionGenerationType.none),
+        'Do not build a definition for a module'
+        ' which generates no definition!',
+      ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -640,10 +611,7 @@ class SynthModuleDefinition {
     // away. This is especially important for array elements, whose assignments
     // are not collapsed away like mergeable signals.
     final assignmentReferencedSignals = <SynthLogic>{
-      for (final assignment in assignments) ...[
-        assignment.src,
-        assignment.dst,
-      ],
+      for (final assignment in assignments) ...[assignment.src, assignment.dst],
     };
 
     final inlineableResultLogics = <SynthLogic>{};
@@ -833,19 +801,20 @@ class SynthModuleDefinition {
 
         if (!isCustomSvModPort) {
           if (internalSignal.isNet) {
-            final anyInternalConnections = [
-              ...internalSignal.srcConnections,
-              ...internalSignal.dstConnections,
-            ]
-                .where(
-                  (e) =>
-                      (e.parentModule == module ||
-                          ( // in case of sub-module output driving a net
+            final anyInternalConnections =
+                [
+                      ...internalSignal.srcConnections,
+                      ...internalSignal.dstConnections,
+                    ]
+                    .where(
+                      (e) =>
+                          (e.parentModule == module ||
+                              ( // in case of sub-module output driving a net
                               e.parentModule?.parent == module &&
                                   e.isOutput)) &&
-                      logicHasPresentSynthLogic(e),
-                )
-                .isNotEmpty;
+                          logicHasPresentSynthLogic(e),
+                    )
+                    .isNotEmpty;
 
             if (anyInternalConnections) {
               reducedInternalSignals.add(internalSignal);
@@ -872,9 +841,7 @@ class SynthModuleDefinition {
             // a wire declaration so both ports can reference it by name.
             final hasInOutLoopback = connectedSubModules.any(
               (m) =>
-                  getSynthSubModuleInstantiation(m)
-                      .inOutMapping
-                      .values
+                  getSynthSubModuleInstantiation(m).inOutMapping.values
                       .where((v) => v == internalSignal)
                       .length >
                   1,
@@ -1049,8 +1016,10 @@ class SynthModuleDefinition {
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
         submodule.pickName(module);
-        assert(submodule.module.name == submodule.name,
-            'Expect reserved names to retain their name.');
+        assert(
+          submodule.module.name == submodule.name,
+          'Expect reserved names to retain their name.',
+        );
       }
     }
 
@@ -1179,8 +1148,9 @@ class SynthModuleDefinition {
     var prevAssignmentCount = 0;
 
     // grab the partial assignments since they can't be merged
-    final partialAssignments =
-        assignments.whereType<PartialSynthAssignment>().toList();
+    final partialAssignments = assignments
+        .whereType<PartialSynthAssignment>()
+        .toList();
     assignments.removeWhere((e) => e is PartialSynthAssignment);
 
     while (prevAssignmentCount != assignments.length) {
