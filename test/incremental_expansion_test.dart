@@ -9,11 +9,11 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank/filter_bank_modules.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart' as ex;
 import '../example/filter_bank.dart';
+import '../example/filter_bank/filter_bank_modules.dart';
 
 void main() {
   tearDown(() async {
