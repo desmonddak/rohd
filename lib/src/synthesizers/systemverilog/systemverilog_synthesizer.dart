@@ -10,18 +10,42 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_result.dart';
 
+/// Configuration controlling generated SystemVerilog.
+class SystemVerilogSynthesizerConfiguration {
+  /// The hierarchy stopping policy used by the synthesizer.
+  ///
+  /// When `null`, [SynthModuleStopPolicy.systemVerilog] is used.
+  final SynthModuleStopPolicy? moduleStopPolicy;
+
+  /// Creates SystemVerilog synthesis configuration.
+  const SystemVerilogSynthesizerConfiguration({this.moduleStopPolicy});
+}
+
 /// A [Synthesizer] which generates equivalent SystemVerilog as the
 /// given [Module].
 ///
 /// Attempts to maintain signal naming and structure as much as possible.
 class SystemVerilogSynthesizer extends Synthesizer {
-  /// The hierarchy stopping policy used by this synthesizer.
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
+  /// The shared hierarchy stopping policy used by this synthesizer.
   final SynthModuleStopPolicy moduleStopPolicy;
 
   /// Creates a [SystemVerilogSynthesizer].
-  SystemVerilogSynthesizer({SynthModuleStopPolicy? moduleStopPolicy})
-    : moduleStopPolicy =
-          moduleStopPolicy ?? SynthModuleStopPolicy.systemVerilog();
+  ///
+  /// Defaults to [SynthModuleStopPolicy.systemVerilog], which treats custom
+  /// SystemVerilog modules and `DefinitionGenerationType.none` modules as
+  /// leaf instances instead of emitting generated definitions for them.
+  ///
+  /// The [moduleStopPolicy] parameter is retained for compatibility and, when
+  /// provided, takes precedence over `configuration.moduleStopPolicy`.
+  SystemVerilogSynthesizer({
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+    SynthModuleStopPolicy? moduleStopPolicy,
+  }) : moduleStopPolicy = moduleStopPolicy ??
+            configuration.moduleStopPolicy ??
+            SynthModuleStopPolicy.systemVerilog();
 
   @override
   bool generatesDefinition(Module module) =>
@@ -103,9 +127,8 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     var parameterString = '';
     if (parameters != null && parameters.isNotEmpty) {
-      final parameterContents = parameters.entries
-          .map((e) => '.${e.key}(${e.value})')
-          .join(',');
+      final parameterContents =
+          parameters.entries.map((e) => '.${e.key}(${e.value})').join(',');
       parameterString = '#($parameterContents)';
     }
 
@@ -136,14 +159,15 @@ class SystemVerilogSynthesizer extends Synthesizer {
     Map<String, String> inOuts = const {},
     Map<String, String>? parameters,
     bool forceStandardInstantiation = false,
-  }) => instantiationVerilogFor(
-    module: module,
-    instanceType: instanceType,
-    instanceName: instanceName,
-    ports: {...inputs, ...outputs, ...inOuts},
-    parameters: parameters,
-    forceStandardInstantiation: forceStandardInstantiation,
-  );
+  }) =>
+      instantiationVerilogFor(
+        module: module,
+        instanceType: instanceType,
+        instanceName: instanceName,
+        ports: {...inputs, ...outputs, ...inOuts},
+        parameters: parameters,
+        forceStandardInstantiation: forceStandardInstantiation,
+      );
 
   @override
   SynthesisResult synthesize(

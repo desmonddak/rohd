@@ -10,7 +10,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/namer.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
 
 /// A [Swizzle] used by synthesis backends to explicitly assemble a
 /// [LogicArray] from its elements.
@@ -20,20 +20,20 @@ class SynthArrayConcat extends Swizzle {
 
   /// Creates a synthesis array concatenation from [signals].
   SynthArrayConcat(super.signals, {required LogicArray destination})
-    : _destination = destination,
-      super(
-        name: Namer.synthOperationInstanceName(
-          operationName: Namer.synthArrayConcatOperationName,
-          destination: destination,
-        ),
-      );
+      : _destination = destination,
+        super(
+          name: SynthOperationNamer.instanceName(
+            operationName: SynthOperationNamer.arrayConcatOperationName,
+            destination: destination,
+          ),
+        );
 
   @override
   bool get hasBuilt => true;
 
   @override
   Object get instanceNameKey => (
-    operationName: Namer.synthArrayConcatOperationName,
-    destination: _destination,
-  );
+        operationName: SynthOperationNamer.arrayConcatOperationName,
+        destination: _destination,
+      );
 }

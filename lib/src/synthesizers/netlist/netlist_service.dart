@@ -213,6 +213,7 @@ class NetlistService extends OutputService {
   /// Full per-module connectivity is fetched on demand via [moduleJson].
   String get slimJson => _slimJsonCache ??= _buildSlimJson();
 
+  /// Builds the slim hierarchy JSON with per-cell connections omitted.
   String _buildSlimJson() {
     final slimModules = <String, dynamic>{};
     for (final entry in _modulesMap.entries) {

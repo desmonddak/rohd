@@ -599,17 +599,12 @@ class FstWriter {
     required int blockEndTime,
     required List<String> frameValues,
   }) {
-    // Build sorted unique time table.
-    // Only include timestamps that have signal chain entries (i.e., after
-    // blockStartTime). Changes at blockStartTime go into the frame section.
-    // The fst-reader only reads the frame when time_table[0] > start_time;
-    // if blockStartTime were included, the frame would be skipped and all
-    // signals would appear as 'x'.
+    // Build sorted unique time table.  Include blockStartTime so readers that
+    // collect the global time table while reading the header never see an
+    // empty table for a frame-only block.
     final timeSet = <int>{};
     for (final c in _changes) {
-      if (c.time != blockStartTime) {
-        timeSet.add(c.time);
-      }
+      timeSet.add(c.time);
     }
     final timeTable = timeSet.toList()..sort();
     // Map timestamp → index
@@ -619,7 +614,7 @@ class FstWriter {
     }
 
     // Build per-signal value change chains
-    final signalData = _buildSignalData(timeToIndex, blockStartTime);
+    final signalData = _buildSignalData(timeToIndex);
 
     // Pack each signal's data (store uncompressed with varint(0) prefix)
     final packedSignals = <Uint8List>[];
@@ -715,21 +710,13 @@ class FstWriter {
   ///
   /// Returns a list of byte arrays, one per signal (0-indexed).
   /// Each byte array contains the encoded value change chain for that signal.
-  /// Changes at [blockStartTime] are skipped (captured in the frame).
-  List<Uint8List> _buildSignalData(
-    Map<int, int> timeToIndex,
-    int blockStartTime,
-  ) {
+  List<Uint8List> _buildSignalData(Map<int, int> timeToIndex) {
     // Group changes by signal handle index
     final signalChanges = List<List<_ValueChange>>.generate(
       _signals.length,
       (_) => [],
     );
     for (final c in _changes) {
-      // Skip changes at blockStartTime — those are captured in the frame
-      if (c.time == blockStartTime) {
-        continue;
-      }
       signalChanges[c.handleIndex].add(c);
     }
 

@@ -146,13 +146,12 @@ class WaveformService implements ModuleService {
   /// inspection overhead.
   final bool enableDevToolsStreaming;
 
-  /// Whether to expand [LogicStructure] signals into FST `struct` scopes
+  /// Whether to expand [LogicStructure] signals into FST scopes
   /// (FST output only).
   ///
-  /// When `true` (the default), each non-array [LogicStructure] (such as a
-  /// `FloatingPoint` with its `sign`, `exponent`, and `mantissa` fields) is
-  /// emitted as a named `struct` scope with one child signal per field, so
-  /// wave viewers group the fields visually as a packed struct.
+  /// When `true` (the default), each [LogicStructure] is emitted as a named
+  /// scope with one child signal per field or array element, so wave viewers
+  /// group structured signals visually.
   ///
   /// When `false`, every signal — including [LogicStructure]s — is written as
   /// a single flat wide bus.  Has no effect on VCD output.
@@ -461,9 +460,9 @@ class WaveformService implements ModuleService {
 
   /// Recursively declares [m]'s scope and tracked signals with [fst].
   ///
-  /// Non-array [LogicStructure]s are expanded into `struct` scopes when
-  /// [expandStructs] is `true`; their field elements are declared during the
-  /// recursion and are therefore skipped at the top level here.
+  /// [LogicStructure]s are expanded into scopes when [expandStructs] is `true`;
+  /// their field elements are declared during the recursion and are therefore
+  /// skipped at the top level here.
   void _declareFstScope(Module m, FstWriter fst) {
     fst.pushScope(m.uniqueInstanceName);
     for (final sig in m.signals) {
@@ -489,21 +488,29 @@ class WaveformService implements ModuleService {
 
   /// Declares [sig] into [fst].
   ///
-  /// When [expandStructs] is `true` and [sig] is a non-array
-  /// [LogicStructure], it is emitted as a `struct` scope with one child per
-  /// field (recursively); the leaf fields are the targets for value-change
-  /// emissions.  Otherwise [sig] is declared as a single flat wide signal.
+  /// When [expandStructs] is `true` and [sig] is a [LogicStructure], it is
+  /// emitted as a scope with one child per field or array element
+  /// (recursively); the leaf fields are the targets for value-change emissions.
+  /// Otherwise [sig] is declared as a single flat wide signal.
   void _declareFstSignal(Logic sig, FstWriter fst) {
-    if (expandStructs && sig is LogicStructure && sig is! LogicArray) {
-      fst.pushScope(sig.name, type: FstScopeType.struct_);
+    if (expandStructs && sig is LogicStructure) {
+      fst.pushScope(
+        _fstSignalName(sig),
+        type: FstScopeType.struct_,
+      );
       for (final element in sig.elements) {
         _declareFstSignal(element, fst);
       }
       fst.popScope();
     } else {
-      _signalToFstHandle[sig] = fst.declareSignal(sig.name, sig.width);
+      _signalToFstHandle[sig] =
+          fst.declareSignal(_fstSignalName(sig), sig.width);
     }
   }
+
+  String _fstSignalName(Logic sig) => sig.isArrayMember
+      ? sig.arrayIndex!.toString()
+      : Sanitizer.sanitizeSV(sig.name);
 
   /// Returns the MSB-first binary string for [signal], suitable for
   /// [FstWriter.emitValueChange].

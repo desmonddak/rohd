@@ -103,5 +103,16 @@ void main() {
       expect(synthResults.where((e) => e.module is AModule).length, 2);
       expect(synthResults.where((e) => e.module is BModule).length, 1);
     });
+
+    test('system verilog configuration can carry stop policy', () {
+      final synthesizer = SystemVerilogSynthesizer(
+        configuration: SystemVerilogSynthesizerConfiguration(
+          moduleStopPolicy: SynthModuleStopPolicy(leafModuleTypes: [AModule]),
+        ),
+      );
+
+      expect(synthesizer.generatesDefinition(AModule(Logic())), isFalse);
+      expect(synthesizer.generatesDefinition(BModule(Logic())), isTrue);
+    });
   });
 }

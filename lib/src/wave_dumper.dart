@@ -170,24 +170,15 @@ class WaveDumper {
       if (sig is Const) {
         continue;
       }
+      if (sig.parentStructure != null) {
+        continue;
+      }
 
       hasSignals = true;
-      final baseName = Sanitizer.sanitizeSV(sig.name);
+      final baseName = _fstSignalName(sig);
       final signalName = moduleSignalUniquifier.getUniqueName(
           initialName: baseName, reserved: sig.isPort);
-
-      final handle = _fstWriter!.declareSignal(
-        signalName,
-        sig.width,
-        direction: sig.isPort
-            ? (sig.isInput ? FstVarDirection.input : FstVarDirection.output)
-            : FstVarDirection.implicit,
-      );
-      _signalToFstHandle[sig] = handle;
-
-      sig.changed.listen((args) {
-        _changedLogicsThisTimestamp.add(sig);
-      });
+      _declareFstSignal(sig, signalName);
     }
 
     for (final subm in m.subModules) {
@@ -204,6 +195,39 @@ class WaveDumper {
     }
     _fstWriter!.popScope();
   }
+
+  /// Declares [sig] into the FST writer, expanding [LogicStructure]s into
+  /// scopes so arrays and structs remain inspectable in waveform viewers.
+  void _declareFstSignal(Logic sig, String signalName) {
+    if (sig is LogicStructure) {
+      _fstWriter!.pushScope(
+        signalName,
+        type: FstScopeType.struct_,
+      );
+      for (final element in sig.elements) {
+        _declareFstSignal(element, _fstSignalName(element));
+      }
+      _fstWriter!.popScope();
+      return;
+    }
+
+    final handle = _fstWriter!.declareSignal(
+      signalName,
+      sig.width,
+      direction: sig.isPort
+          ? (sig.isInput ? FstVarDirection.input : FstVarDirection.output)
+          : FstVarDirection.implicit,
+    );
+    _signalToFstHandle[sig] = handle;
+
+    sig.changed.listen((args) {
+      _changedLogicsThisTimestamp.add(sig);
+    });
+  }
+
+  String _fstSignalName(Logic sig) => sig.isArrayMember
+      ? sig.arrayIndex!.toString()
+      : Sanitizer.sanitizeSV(sig.name);
 
   // ─────────────── Shared methods ───────────────
 

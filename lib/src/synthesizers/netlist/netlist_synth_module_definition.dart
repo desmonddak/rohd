@@ -1,6 +1,5 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 //
 // netlist_synth_module_definition.dart
 // Synth module definition specialization for netlist synthesis.
@@ -21,16 +20,15 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
     // netlist shows select gates for element extraction rather than
     // flat bit aliasing.
     module.inputs.values.whereType<LogicArray>().forEach(
-      _subsetReceiveArrayPort,
-    );
+          _subsetReceiveArrayPort,
+        );
 
     // Same for LogicArray outputs on submodules (received into this scope).
-    final subModuleOutputArrays =
-        module.subModules
-            .expand((sub) => sub.outputs.values)
-            .whereType<LogicArray>()
-            .toSet()
-          ..forEach(_subsetReceiveArrayPort);
+    final subModuleOutputArrays = module.subModules
+        .expand((sub) => sub.outputs.values)
+        .whereType<LogicArray>()
+        .toSet()
+      ..forEach(_subsetReceiveArrayPort);
 
     // Create explicit $concat cells for internal LogicArrays whose elements
     // are driven independently (e.g. by constants) and then consumed by
@@ -70,21 +68,19 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
         portArraySynthLogics.add(synthLogic.resolved);
       }
     }
-    module.internalSignals
-        .whereType<LogicArray>()
-        .where((signal) {
-          if (excludedArrays.contains(signal)) {
-            return false;
-          }
-          final synthLogic = logicToSynthMap[signal];
-          if (synthLogic == null) {
-            return false;
-          }
-          return !portArraySynthLogics.contains(synthLogic.resolved);
-        })
-        .forEach(_concatAssembleArray);
+    module.internalSignals.whereType<LogicArray>().where((signal) {
+      if (excludedArrays.contains(signal)) {
+        return false;
+      }
+      final synthLogic = logicToSynthMap[signal];
+      if (synthLogic == null) {
+        return false;
+      }
+      return !portArraySynthLogics.contains(synthLogic.resolved);
+    }).forEach(_concatAssembleArray);
   }
 
+  /// Adds slice cells that decompose a LogicArray port into element signals.
   void _subsetReceiveArrayPort(LogicArray port) {
     final portSynth = getSynthLogic(port)!;
 
@@ -109,6 +105,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
+  /// Adds a concat cell that assembles independent LogicArray element signals.
   void _concatAssembleArray(LogicArray array) {
     final arraySynth = getSynthLogic(array)!;
     final dummyElements = [

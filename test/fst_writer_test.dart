@@ -11,6 +11,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -33,6 +34,26 @@ class _MultiBitModule extends Module {
     a = addInput('a', a, width: a.width);
     final aClk = addInput('clk', clk);
     addOutput('q', width: a.width) <= FlipFlop(aClk, a).q;
+  }
+}
+
+/// A module with LogicArray ports for testing structured FST emission.
+class _ArrayModule extends Module {
+  LogicArray get out => output('out') as LogicArray;
+
+  _ArrayModule(LogicArray input) {
+    input = addInputArray(
+      'dataIn',
+      input,
+      dimensions: input.dimensions,
+      elementWidth: input.elementWidth,
+    );
+    addOutputArray(
+      'out',
+      dimensions: input.dimensions,
+      elementWidth: input.elementWidth,
+    );
+    out <= input;
   }
 }
 
@@ -108,6 +129,85 @@ Map<String, int> _parseFstHeader(Uint8List data) {
   };
 }
 
+/// Returns the number of time entries in the first VcData block.
+int _firstDataBlockTimeEntryCount(Uint8List data) {
+  var pos = 0;
+  while (pos < data.length) {
+    final blockType = data[pos];
+    pos++;
+    if (pos + 8 > data.length) {
+      break;
+    }
+    final sectionLength = _readU64(data, pos);
+    if (blockType == 8) {
+      return _readU64(data, pos + sectionLength - 8);
+    }
+    pos += sectionLength;
+  }
+  throw StateError('No FST VcData block found.');
+}
+
+/// Returns encoded FST scope types by scope name from the hierarchy block.
+Map<String, int> _scopeTypesByName(Uint8List data) {
+  var pos = 0;
+  while (pos < data.length) {
+    final blockType = data[pos];
+    pos++;
+    final sectionLength = _readU64(data, pos);
+    if (blockType == 4) {
+      final end = pos + sectionLength;
+      final compressed = data.sublist(pos + 16, end);
+      final hierarchy = Uint8List.fromList(GZipCodec().decode(compressed));
+      return _parseHierarchyScopeTypes(hierarchy);
+    }
+    pos += sectionLength;
+  }
+  throw StateError('No FST hierarchy block found.');
+}
+
+Map<String, int> _parseHierarchyScopeTypes(Uint8List data) {
+  final scopeTypes = <String, int>{};
+  var pos = 0;
+
+  String readCString() {
+    final start = pos;
+    while (pos < data.length && data[pos] != 0) {
+      pos++;
+    }
+    final value = utf8.decode(data.sublist(start, pos));
+    pos++;
+    return value;
+  }
+
+  void readVarint() {
+    while (pos < data.length) {
+      final byte = data[pos++];
+      if ((byte & 0x80) == 0) {
+        return;
+      }
+    }
+  }
+
+  while (pos < data.length) {
+    final entryType = data[pos++];
+    if (entryType == 254) {
+      final scopeType = data[pos++];
+      final name = readCString();
+      readCString();
+      scopeTypes[name] = scopeType;
+    } else if (entryType == 255) {
+      continue;
+    } else {
+      pos++;
+      readCString();
+      readVarint();
+      readVarint();
+    }
+  }
+
+  return scopeTypes;
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -161,6 +261,7 @@ void main() {
       expect(blocks.containsKey(8), isTrue, reason: 'Must have VcData block');
       expect(blocks.containsKey(3), isTrue, reason: 'Must have geometry');
       expect(blocks.containsKey(4), isTrue, reason: 'Must have hierarchy');
+      expect(_firstDataBlockTimeEntryCount(data), greaterThan(0));
 
       File(path).deleteSync();
     });
@@ -311,6 +412,58 @@ void main() {
       expect(header['var_count'], equals(2));
 
       _deleteFstDump(dumpName);
+    });
+
+    test('WaveDumper FST expands LogicArray leaves', () async {
+      final input = LogicArray([2, 3], 8, name: 'dataIn');
+      final mod = _ArrayModule(input);
+      await mod.build();
+
+      const dumpName = 'fstLogicArrayWaveDumper';
+      _createFstDump(mod, dumpName);
+
+      input.elements[0].elements[0].put(1);
+      Simulator.setMaxSimTime(10);
+      await Simulator.run();
+
+      final data = File(_temporaryFstPath(dumpName)).readAsBytesSync();
+      final header = _parseFstHeader(data);
+      final scopeTypes = _scopeTypesByName(data);
+
+      expect(header['var_count'], equals(12));
+      expect(scopeTypes['dataIn'], equals(6));
+      expect(scopeTypes['out'], equals(6));
+
+      _deleteFstDump(dumpName);
+    });
+
+    test('WaveformService FST expands LogicArray leaves', () async {
+      final input = LogicArray([2, 3], 8, name: 'dataIn');
+      final mod = _ArrayModule(input);
+      await mod.build();
+
+      const fstPath = '$_tempDumpDir/waveform_service_logic_array.fst';
+      WaveformService(
+        mod,
+        outputPath: fstPath,
+        format: WaveOutputFormat.fst,
+      );
+
+      input.elements[0].elements[0].put(1);
+      Simulator.setMaxSimTime(10);
+      await Simulator.run();
+
+      final data = File(fstPath).readAsBytesSync();
+      final header = _parseFstHeader(data);
+      final scopeTypes = _scopeTypesByName(data);
+
+      expect(header['var_count'], equals(12));
+      expect(scopeTypes['dataIn'], equals(6));
+      expect(scopeTypes['out'], equals(6));
+
+      if (File(fstPath).existsSync()) {
+        File(fstPath).deleteSync();
+      }
     });
 
     test('FST and VCD both produce output', () async {

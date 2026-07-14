@@ -52,7 +52,7 @@ class SynthModuleDefinition {
   /// A mapping from the original [Module]s to the
   /// [SynthSubModuleInstantiation]s that represent them.
   final Map<Module, SynthSubModuleInstantiation>
-  moduleToSubModuleInstantiationMap = {};
+      moduleToSubModuleInstantiationMap = {};
 
   /// All the sub-module instantiations used within this definition which are
   /// still present (not removed).
@@ -158,8 +158,7 @@ class SynthModuleDefinition {
           parentSynthModuleDefinition: this,
         );
       } else {
-        final disallowConstName =
-            (logic.isInput || logic.isInOut) &&
+        final disallowConstName = (logic.isInput || logic.isInOut) &&
             // ignore: deprecated_member_use_from_same_package
             ((logic.parentModule is CustomSystemVerilog &&
                     // ignore: deprecated_member_use_from_same_package
@@ -167,7 +166,8 @@ class SynthModuleDefinition {
                         .expressionlessInputs
                         .contains(logic.name)) ||
                 (logic.parentModule is SystemVerilog &&
-                    (logic.parentModule! as SystemVerilog).expressionlessInputs
+                    (logic.parentModule! as SystemVerilog)
+                        .expressionlessInputs
                         .contains(logic.name)));
 
         final Naming? namingOverride;
@@ -287,12 +287,12 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-    : assert(
-        !(module is SystemVerilog &&
-            module.generatedDefinitionType == DefinitionGenerationType.none),
-        'Do not build a definition for a module'
-        ' which generates no definition!',
-      ) {
+      : assert(
+          !(module is SystemVerilog &&
+              module.generatedDefinitionType == DefinitionGenerationType.none),
+          'Do not build a definition for a module'
+          ' which generates no definition!',
+        ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -801,20 +801,19 @@ class SynthModuleDefinition {
 
         if (!isCustomSvModPort) {
           if (internalSignal.isNet) {
-            final anyInternalConnections =
-                [
-                      ...internalSignal.srcConnections,
-                      ...internalSignal.dstConnections,
-                    ]
-                    .where(
-                      (e) =>
-                          (e.parentModule == module ||
-                              ( // in case of sub-module output driving a net
+            final anyInternalConnections = [
+              ...internalSignal.srcConnections,
+              ...internalSignal.dstConnections,
+            ]
+                .where(
+                  (e) =>
+                      (e.parentModule == module ||
+                          ( // in case of sub-module output driving a net
                               e.parentModule?.parent == module &&
                                   e.isOutput)) &&
-                          logicHasPresentSynthLogic(e),
-                    )
-                    .isNotEmpty;
+                      logicHasPresentSynthLogic(e),
+                )
+                .isNotEmpty;
 
             if (anyInternalConnections) {
               reducedInternalSignals.add(internalSignal);
@@ -841,7 +840,9 @@ class SynthModuleDefinition {
             // a wire declaration so both ports can reference it by name.
             final hasInOutLoopback = connectedSubModules.any(
               (m) =>
-                  getSynthSubModuleInstantiation(m).inOutMapping.values
+                  getSynthSubModuleInstantiation(m)
+                      .inOutMapping
+                      .values
                       .where((v) => v == internalSignal)
                       .length >
                   1,
@@ -1148,9 +1149,8 @@ class SynthModuleDefinition {
     var prevAssignmentCount = 0;
 
     // grab the partial assignments since they can't be merged
-    final partialAssignments = assignments
-        .whereType<PartialSynthAssignment>()
-        .toList();
+    final partialAssignments =
+        assignments.whereType<PartialSynthAssignment>().toList();
     assignments.removeWhere((e) => e is PartialSynthAssignment);
 
     while (prevAssignmentCount != assignments.length) {

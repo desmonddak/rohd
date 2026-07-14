@@ -41,6 +41,7 @@ class NetlistSynthesisResult extends SynthesisResult {
     this.attributes = const {},
   });
 
+  /// Builds the JSON representation for this single module entry.
   String _buildJson() {
     final moduleEntry = <String, Object?>{
       'attributes': attributes,
