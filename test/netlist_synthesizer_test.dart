@@ -1921,6 +1921,25 @@ void main() {
       );
 
       expect(warnings, contains(contains('wire bit 1 has multiple drivers')));
+      warnings.clear();
+
+      final capturedWarnings = runZoned(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'ShortedModule',
+          printWarnings: false,
+        ),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+
+      expect(
+        capturedWarnings,
+        contains(contains('wire bit 1 has multiple drivers')),
+      );
+      expect(warnings, isEmpty);
       expect(
         () => NetlistValidation.validate(
           ports,
@@ -1930,6 +1949,51 @@ void main() {
           printWarnings: false,
         ),
         throwsStateError,
+      );
+    });
+
+    test('validation can skip unconnected output warnings', () {
+      final ports = {
+        'a': {
+          'direction': 'input',
+          'bits': [1],
+        },
+        'b': {
+          'direction': 'input',
+          'bits': [2],
+        },
+      };
+      final cells = {
+        'unusedAnd': {
+          'type': r'$and',
+          'port_directions': {'A': 'input', 'B': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [1],
+            'B': [2],
+            'Y': [3],
+          },
+        },
+      };
+
+      expect(
+        NetlistValidation.validate(
+          ports,
+          cells,
+          'UnusedOutputModule',
+          printWarnings: false,
+        ),
+        contains(contains('unusedAnd')),
+      );
+
+      expect(
+        NetlistValidation.validate(
+          ports,
+          cells,
+          'UnusedOutputModule',
+          printWarnings: false,
+          checkUnconnectedOutputs: false,
+        ),
+        isEmpty,
       );
     });
 

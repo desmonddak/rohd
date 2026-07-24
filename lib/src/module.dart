@@ -1156,7 +1156,9 @@ abstract class Module {
             .join('\n\n////////////////////\n\n');
   }
 
-  /// Returns a synthesized netlist JSON representation of this [Module].
+  /// Testing-only convenience for a synthesized netlist JSON representation of
+  /// this [Module]. Use [NetlistSynthesizer] directly outside tests.
+  @visibleForTesting
   String generateNetlist(
       {NetlistOptions options = const NetlistOptions(), String? packageRoot}) {
     if (!_hasBuilt) {

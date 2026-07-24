@@ -77,6 +77,10 @@ class NetlistOptions {
   /// are entirely unconsumed.
   final bool enableDCE;
 
+  /// When `true`, validation reports debug warnings for cells whose output
+  /// bits are not consumed. Multiple-driver validation always runs.
+  final bool validateUnconnectedOutputs;
+
   /// When `true`, the synthesizer produces "slim" output: cell connection maps
   /// are not copied into the emitted JSON projection. Netnames and ports are
   /// still emitted with full wire-ID fidelity, while per-module synthesis
@@ -107,6 +111,7 @@ class NetlistOptions {
     this.netlistCellMapper,
     this.collapseTransparentClusters = false,
     this.enableDCE = true,
+    this.validateUnconnectedOutputs = true,
     this.slimMode = false,
     this.compressBitRanges = false,
     this.compactJson = false,

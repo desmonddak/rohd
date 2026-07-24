@@ -891,12 +891,14 @@ class NetlistSynthesizer extends Synthesizer {
 
     // -- Structural validation -------------------------------------------
     // Always catch netlist shorts, even when assertions are disabled.
-    NetlistValidation.validate(
+    final warnings = NetlistValidation.validate(
       ports,
       cells,
       module.name,
       netnames: netnames,
       throwOnMultipleDrivers: true,
+      printWarnings: false,
+      checkUnconnectedOutputs: options.validateUnconnectedOutputs,
     );
 
     return NetlistSynthesisResult(
@@ -906,6 +908,7 @@ class NetlistSynthesizer extends Synthesizer {
       cells: cells,
       netnames: netnames,
       attributes: attr,
+      warnings: warnings,
     );
   }
 

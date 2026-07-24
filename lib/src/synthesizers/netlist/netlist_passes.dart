@@ -96,13 +96,20 @@ class NetlistPasses {
   //  Unified transparent-cell clustering
   // ════════════════════════════════════════════════════════════════════
 
-  /// Transparent cell types that only reshuffle / rename bits.
-  static const _transparentTypes = {
+  /// Transparent cell types that only reshuffle / rename bits and can be
+  /// cleaned up when their outputs are unconsumed.
+  static const _transparentCleanupTypes = {
     r'$buf',
     r'$slice',
     r'$concat',
     r'$struct_unpack',
     r'$struct_pack',
+  };
+
+  /// Transparent cell types whose bit mappings can be safely clustered.
+  static const _clusterableTransparentTypes = {
+    r'$buf',
+    r'$slice',
   };
 
   /// Unified transparent-cell clustering pass.
@@ -133,7 +140,10 @@ class NetlistPasses {
 
       final tCells = <String>{
         for (final e in cells.entries)
-          if (_transparentTypes.contains(e.value['type'] as String?)) e.key,
+          if (_clusterableTransparentTypes.contains(
+            e.value['type'] as String?,
+          ))
+            e.key,
       };
       if (tCells.isEmpty) {
         continue;
@@ -231,16 +241,6 @@ class NetlistPasses {
       final cellsToAdd = <String, Map<String, Object?>>{};
 
       for (final comp in components) {
-        if (comp.any(
-          (cn) => const {
-            r'$concat',
-            r'$struct_pack',
-            r'$struct_unpack',
-          }.contains(cells[cn]!['type']),
-        )) {
-          continue;
-        }
-
         // Build output-bit → input-bit map for the whole cluster.
         final bitMap = <int, Object>{};
         for (final cn in comp) {
@@ -355,7 +355,7 @@ class NetlistPasses {
         }
 
         cells.removeWhere((_, cell) {
-          if (!_transparentTypes.contains(cell['type'] as String?)) {
+          if (!_transparentCleanupTypes.contains(cell['type'] as String?)) {
             return false;
           }
           final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
@@ -694,7 +694,6 @@ class NetlistPasses {
   /// for a single transparent cell.
   static void _mapCellBits(Map<String, Object?> cell, Map<int, Object> bitMap) {
     final type = cell['type']! as String;
-    final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
     final conns = cell['connections'] as Map<String, dynamic>? ?? {};
     final params = cell['parameters'] as Map<String, dynamic>? ?? {};
 
@@ -709,63 +708,6 @@ class NetlistPasses {
         for (var i = 0; i < y.length; i++) {
           if (y[i] is int && (off + i) < a.length) {
             bitMap[y[i] as int] = a[off + i] as Object;
-          }
-        }
-
-      case r'$concat':
-        final y = conns['Y'] as List;
-        // Input ports are in connection-map order; their bits
-        // concatenate to form Y (first port at LSB).
-        final inBits = <Object>[
-          for (final pe in conns.entries)
-            if ((dirs[pe.key] as String?) != 'output')
-              ...(pe.value as List).cast<Object>(),
-        ];
-        _mapPairwise(inBits, y, bitMap);
-
-      case r'$struct_unpack':
-        final a = conns['A'] as List;
-        final fc = params['FIELD_COUNT'] as int? ?? 0;
-        for (var f = 0; f < fc; f++) {
-          final fn = params['FIELD_${f}_NAME'] as String?;
-          final fo = params['FIELD_${f}_OFFSET'] as int? ?? 0;
-          if (fn == null) {
-            continue;
-          }
-          final fb = conns[fn] as List?;
-          if (fb == null) {
-            continue;
-          }
-          for (var i = 0; i < fb.length; i++) {
-            if (fb[i] is int && (fo + i) < a.length) {
-              bitMap[fb[i] as int] = a[fo + i] as Object;
-            }
-          }
-        }
-
-      case r'$struct_pack':
-        final y = conns['Y'] as List;
-        final fc = params['FIELD_COUNT'] as int? ?? 0;
-        final src = List<Object?>.filled(y.length, null);
-        for (var f = 0; f < fc; f++) {
-          final fn = params['FIELD_${f}_NAME'] as String?;
-          final fo = params['FIELD_${f}_OFFSET'] as int? ?? 0;
-          if (fn == null) {
-            continue;
-          }
-          final fb = conns[fn] as List?;
-          if (fb == null) {
-            continue;
-          }
-          for (var i = 0; i < fb.length; i++) {
-            if ((fo + i) < src.length) {
-              src[fo + i] = fb[i];
-            }
-          }
-        }
-        for (var i = 0; i < y.length; i++) {
-          if (y[i] is int && src[i] != null) {
-            bitMap[y[i] as int] = src[i]!;
           }
         }
     }

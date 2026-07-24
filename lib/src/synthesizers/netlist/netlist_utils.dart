@@ -13,12 +13,9 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Shared utility functions for netlist synthesis and post-processing passes.
 ///
-/// All methods are static — no instances are created.
+/// All methods are static.
 @internal
-class NetlistUtils {
-  /// Prevents construction of this static utility class.
-  NetlistUtils._();
-
+abstract class NetlistUtils {
   /// Find the port name in [portMap] that corresponds to [sl].
   static String? portNameForSynthLogic(
     SynthLogic sl,

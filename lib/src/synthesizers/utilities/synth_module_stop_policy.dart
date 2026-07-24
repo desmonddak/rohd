@@ -1,6 +1,5 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 //
 // synth_module_stop_policy.dart
 // Shared module hierarchy stopping policy for synthesis backends.

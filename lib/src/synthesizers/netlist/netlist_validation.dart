@@ -47,6 +47,7 @@ class NetlistValidation {
     Map<String, Object?>? netnames,
     bool throwOnMultipleDrivers = false,
     bool printWarnings = true,
+    bool checkUnconnectedOutputs = true,
   }) {
     final warnings = <String>[];
     final multipleDriverWarnings = <String>[];
@@ -124,32 +125,34 @@ class NetlistValidation {
       );
     }
 
-    for (final entry in cells.entries) {
-      final cell = entry.value;
-      final type = cell['type'] as String? ?? '';
-      if (transparentTypes.contains(type) || type == r'$const') {
-        continue;
+    if (checkUnconnectedOutputs) {
+      for (final entry in cells.entries) {
+        final cell = entry.value;
+        final type = cell['type'] as String? ?? '';
+        if (transparentTypes.contains(type) || type == r'$const') {
+          continue;
+        }
+        final outputBits = _cellBits(cell, 'output');
+        if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
+          report(
+            '[netlist-validate] WARNING: $moduleName: '
+            'cell "${entry.key}" (type: $type) has no consumed outputs '
+            '— fully disconnected logic gate',
+          );
+        }
       }
-      final outputBits = _cellBits(cell, 'output');
-      if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
-        report(
-          '[netlist-validate] WARNING: $moduleName: '
-          'cell "${entry.key}" (type: $type) has no consumed outputs '
-          '— fully disconnected logic gate',
-        );
-      }
-    }
 
-    for (final entry in cells.entries.where(
-      (entry) => entry.value['type'] == r'$const',
-    )) {
-      final outputBits = _cellBits(entry.value, 'output');
-      if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
-        report(
-          '[netlist-validate] WARNING: $moduleName: '
-          r'$const cell "${entry.key}" drives wires consumed by nothing '
-          '— floating constant',
-        );
+      for (final entry in cells.entries.where(
+        (entry) => entry.value['type'] == r'$const',
+      )) {
+        final outputBits = _cellBits(entry.value, 'output');
+        if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
+          report(
+            '[netlist-validate] WARNING: $moduleName: '
+            r'$const cell "${entry.key}" drives wires consumed by nothing '
+            '— floating constant',
+          );
+        }
       }
     }
 

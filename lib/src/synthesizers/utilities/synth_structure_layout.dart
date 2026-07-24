@@ -1,6 +1,5 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 //
 // synth_structure_layout.dart
 // Shared packed LogicStructure layout utility for synthesis backends.

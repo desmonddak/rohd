@@ -75,6 +75,34 @@ class _AdderModule extends Module {
   }
 }
 
+/// Example for the netlist-only adjacent-slice/concat collapse.
+class _AdjacentSliceConcatExample extends Module {
+  Logic get out => output('out');
+
+  _AdjacentSliceConcatExample(Logic data)
+      : super(definitionName: 'AdjacentSliceConcatExample') {
+    data = addInput('data', data, width: 8);
+
+    final low = data.getRange(0, 4).named('low');
+    final high = data.getRange(4, 8).named('high');
+    addOutput('out', width: 8) <= [high, low].swizzle();
+  }
+}
+
+/// Example for the netlist-only transparent slice/buf cluster collapse.
+class _SliceAliasClusterExample extends Module {
+  Logic get out => output('out');
+
+  _SliceAliasClusterExample(Logic data)
+      : super(definitionName: 'SliceAliasClusterExample') {
+    data = addInput('data', data, width: 8);
+
+    final low = data.getRange(0, 4).named('low');
+    final alias = Swizzle([low]).out.named('alias');
+    addOutput('out', width: 4) <= alias;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -129,6 +157,20 @@ FilterBank _buildFilterBank({
     dataWidth: dataWidth,
     coefficients: coefficients,
   );
+}
+
+Map<String, dynamic> _topModuleFromJson(Module module, String json) {
+  final decoded = jsonDecode(json) as Map<String, dynamic>;
+  final modules = decoded['modules'] as Map<String, dynamic>;
+  return modules[module.definitionName] as Map<String, dynamic>;
+}
+
+int _cellCount(Map<String, dynamic> module, String cellType) {
+  final cells = module['cells'] as Map<String, dynamic>? ?? {};
+  return cells.values.where((cell) {
+    final cellMap = cell as Map<String, dynamic>;
+    return cellMap['type'] == cellType;
+  }).length;
 }
 
 // ---------------------------------------------------------------------------
@@ -532,6 +574,53 @@ void main() {
           }
         }
       }
+    });
+  });
+
+  // ── Netlist-only transparent optimizations ───────────────────────────
+
+  group('Netlist-only transparent optimizations', () {
+    test('adjacent slices feeding concat collapse into one wider slice',
+        () async {
+      final mod = _AdjacentSliceConcatExample(Logic(name: 'data', width: 8));
+      await mod.build();
+
+      final rawTop = _topModuleFromJson(
+        mod,
+        NetlistSynthesizer().synthesizeToJson(mod),
+      );
+      expect(_cellCount(rawTop, r'$slice'), equals(2));
+      expect(_cellCount(rawTop, r'$concat'), equals(1));
+
+      final collapsedTop = _topModuleFromJson(
+        mod,
+        NetlistSynthesizer(
+          options: const NetlistOptions(collapseTransparentClusters: true),
+        ).synthesizeToJson(mod),
+      );
+      expect(_cellCount(collapsedTop, r'$slice'), equals(1));
+      expect(_cellCount(collapsedTop, r'$concat'), equals(0));
+    });
+
+    test('slice feeding alias buffer collapses into one buffer', () async {
+      final mod = _SliceAliasClusterExample(Logic(name: 'data', width: 8));
+      await mod.build();
+
+      final rawTop = _topModuleFromJson(
+        mod,
+        NetlistSynthesizer().synthesizeToJson(mod),
+      );
+      expect(_cellCount(rawTop, r'$slice'), equals(1));
+      expect(_cellCount(rawTop, r'$buf'), equals(1));
+
+      final collapsedTop = _topModuleFromJson(
+        mod,
+        NetlistSynthesizer(
+          options: const NetlistOptions(collapseTransparentClusters: true),
+        ).synthesizeToJson(mod),
+      );
+      expect(_cellCount(collapsedTop, r'$slice'), equals(0));
+      expect(_cellCount(collapsedTop, r'$buf'), equals(1));
     });
   });
 
