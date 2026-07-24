@@ -86,9 +86,8 @@ class SystemVerilogService extends CodeGenService {
   }) : includeHeader = includeHeader ?? !multiFile {
     if (!module.hasBuilt) {
       throw Exception(
-        'Module must be built before creating SystemVerilogService. '
-        'Call build() first.',
-      );
+          'Module must be built before creating SystemVerilogService. '
+          'Call build() first.');
     }
 
     synthBuilder = SynthBuilder(
@@ -178,8 +177,7 @@ class SystemVerilogService extends CodeGenService {
     final target = path ?? outputPath;
     if (target == null) {
       throw ArgumentError(
-        'No output path provided: pass a path to write() or set outputPath.',
-      );
+          'No output path provided: pass a path to write() or set outputPath.');
     }
     if (multiFile) {
       writeFiles(target);
