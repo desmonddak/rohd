@@ -253,5 +253,5 @@ print(root.signals.first.path());   // 'Counter/clk'
 | **Transport-independent** | The package defines the dictionary model, not the wire protocol. Any transport (VM service, JSON-RPC, gRPC, WebSocket) can carry the compact addresses. |
 
 ----------------
-Copyright (C) 2026 Intel Corporation  
+Copyright (C) 2026 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause

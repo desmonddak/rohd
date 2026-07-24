@@ -38,5 +38,5 @@ The package exports a single barrel library. Consumers should import
 `rohd_devtools_widgets.dart` rather than reaching into `lib/src`.
 
 ----------------
-Copyright (C) 2026 Intel Corporation  
+Copyright (C) 2026 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause
