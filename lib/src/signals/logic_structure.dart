@@ -61,6 +61,7 @@ class LogicStructure implements Logic {
 
         element._parentStructure = this;
       });
+    SourceTracer.recordSignal(this);
   }
 
   @override

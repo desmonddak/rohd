@@ -302,6 +302,7 @@ class Logic {
       throw LogicConstructionException(
           'Logic width must be greater than or equal to 0.');
     }
+    SourceTracer.recordSignal(this);
   }
 
   /// Constructs a [Logic] with some additional validation for ports of

@@ -553,6 +553,15 @@ class SynthLogicArrayElement extends SynthLogic {
     return n;
   }
 
+  @override
+  String? get nameOrNull {
+    final resolvedParent = parentArray.replacement ?? parentArray;
+    final parentArrayName = resolvedParent.nameOrNull;
+    return parentArrayName == null
+        ? null
+        : '$parentArrayName[${logic.arrayIndex!}]';
+  }
+
   /// The element of the [parentArray].
   final Logic logic;
 

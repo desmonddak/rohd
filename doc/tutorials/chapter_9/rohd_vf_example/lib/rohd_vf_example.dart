@@ -1,9 +1,20 @@
+// Copyright (C) 2023-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// rohd_vf_example.dart
+// ROHD Verification Framework tutorial testbench.
+//
+// 2023 September 22
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'dart:async';
 import 'dart:collection';
+
 import 'package:logging/logging.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd_vf/rohd_vf.dart';
-import '../../counter.dart';
+
+import 'counter.dart';
 
 // The DUT to test.
 class TopTB {
@@ -43,7 +54,7 @@ class MySeqItem extends SequenceItem {
 // passing SequenceItems through a Sequencer to a Driver.
 class MySequencer extends Sequencer<MySeqItem> {
   MySequencer(Component parent, {String name = 'mySequencer'})
-      : super(name, parent);
+    : super(name, parent);
 }
 
 // A Sequence is a modular object which has instructions for how to send
@@ -77,9 +88,12 @@ class MyDriver extends Driver<MySeqItem> {
 
   Objection? _driverObjection;
 
-  MyDriver(this.intf, MySequencer sequencer, Component parent,
-      {String name = 'counterDriver'})
-      : super(name, parent, sequencer: sequencer);
+  MyDriver(
+    this.intf,
+    MySequencer sequencer,
+    Component parent, {
+    String name = 'counterDriver',
+  }) : super(name, parent, sequencer: sequencer);
 
   @override
   Future<void> run(Phase phase) async {
@@ -128,7 +142,7 @@ class MyValueMonitor extends Monitor<LogicValue> {
   final MyCounterInterface intf;
 
   MyValueMonitor(this.intf, Component parent, {String name = 'myValueMonitor'})
-      : super(name, parent);
+    : super(name, parent);
 
   @override
   Future<void> run(Phase phase) async {
@@ -153,7 +167,7 @@ class MyAgent extends Agent {
   late final MyValueMonitor valueMonitor;
 
   MyAgent(this.intf, Component parent, {String name = 'myAgent'})
-      : super(name, parent) {
+    : super(name, parent) {
     sequencer = MySequencer(this);
     driver = MyDriver(intf, sequencer, this);
     valueMonitor = MyValueMonitor(intf, this);
@@ -168,9 +182,12 @@ class MyScoreboard extends Component {
   /// An instance of the interface to [MyCounter].
   final MyCounterInterface intf;
 
-  MyScoreboard(this.valueStream, this.intf, Component parent,
-      {String name = 'myScoreboard'})
-      : super(name, parent);
+  MyScoreboard(
+    this.valueStream,
+    this.intf,
+    Component parent, {
+    String name = 'myScoreboard',
+  }) : super(name, parent);
 
   /// The most recent value received on [valueStream].
   int? _seenValue;
@@ -224,7 +241,7 @@ class MyEnv extends Env {
   late final MyScoreboard scoreboard;
 
   MyEnv(this.intf, Component parent, {String name = 'myEnv'})
-      : super(name, parent) {
+    : super(name, parent) {
     agent = MyAgent(intf, this);
     scoreboard = MyScoreboard(agent.valueMonitor.stream, intf, this);
   }

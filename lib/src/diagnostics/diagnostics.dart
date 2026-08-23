@@ -9,5 +9,7 @@
 
 export 'module_service.dart';
 export 'module_services.dart';
+export 'flc_service.dart' show FlcService;
+export 'trace_service.dart';
 export 'waveform_service.dart';
 export 'waveform_writer.dart';
