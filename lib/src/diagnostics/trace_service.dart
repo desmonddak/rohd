@@ -31,6 +31,15 @@ enum SvOutputMode {
   singleFile,
 }
 
+/// How generated SystemC is laid out on disk.
+enum ScOutputMode {
+  /// Each module definition lives in its own `.sc` file.
+  perModule,
+
+  /// All module definitions are concatenated into one `.sc` file.
+  singleFile,
+}
+
 /// A service that combines [SourceTracer] stack traces with
 /// [SystemVerilogService] line maps to produce FLC (File-Line-Column)
 /// cross-probing data.
@@ -69,6 +78,9 @@ class TraceService extends ArtifactProducingService {
   /// line numbers).
   final SystemVerilogService? svService;
 
+  /// The optional [SystemCService] whose line maps enrich the FLC output.
+  final SystemCService? scService;
+
   /// The package root directory, used to make source paths relative.
   ///
   /// Defaults to [Directory.current] path if not provided.
@@ -97,6 +109,9 @@ class TraceService extends ArtifactProducingService {
   /// per-module or file-global SV line numbers.
   final SvOutputMode svOutputMode;
 
+  /// How generated SystemC line numbers are interpreted.
+  final ScOutputMode scOutputMode;
+
   /// Creates a [TraceService] for [module].
   ///
   /// [module] must already be built. If [svService] is provided, its
@@ -109,14 +124,20 @@ class TraceService extends ArtifactProducingService {
   TraceService(
     Module module, {
     this.svService,
+    this.scService,
     String? packageRoot,
     this.outputPath,
     bool register = true,
     this.svOutputMode = SvOutputMode.singleFile,
+    ScOutputMode? scOutputMode,
     super.outputDirectory,
     super.outputBaseName,
-  }) : packageRoot = packageRoot ?? Directory.current.path,
-       super(module) {
+  })  : packageRoot = packageRoot ?? Directory.current.path,
+        scOutputMode = scOutputMode ??
+            (scService?.multiFile == false
+                ? ScOutputMode.singleFile
+                : ScOutputMode.perModule),
+        super(module) {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating TraceService. '
@@ -133,12 +154,12 @@ class TraceService extends ArtifactProducingService {
   /// The generated FLC hierarchy artifact.
   @override
   Iterable<ModuleServiceArtifact> get artifacts => [
-    ModuleServiceArtifact(
-      fileName: '$outputBaseName.flc.json',
-      mediaType: 'application/json',
-      openRead: () => Stream.value(utf8.encode(flcJson)),
-    ),
-  ];
+        ModuleServiceArtifact(
+          fileName: '$outputBaseName.flc.json',
+          mediaType: 'application/json',
+          openRead: () => Stream.value(utf8.encode(flcJson)),
+        ),
+      ];
 
   /// Whether any traces were captured during the build.
   bool get hasTraces => SourceTracer.hasTraces;
@@ -148,19 +169,20 @@ class TraceService extends ArtifactProducingService {
   /// (assignments..., declaration).
   static List<String> _declarationLast(List<String> positions) =>
       positions.length <= 1
-      ? List.unmodifiable(positions)
-      : List.unmodifiable([...positions.skip(1), positions.first]);
+          ? List.unmodifiable(positions)
+          : List.unmodifiable([...positions.skip(1), positions.first]);
 
   /// Applies [_declarationLast] to every symbol in a language line map.
   static Map<String, Map<String, List<String>>> _declarationsLast(
     Map<String, Map<String, List<String>>> lineMaps,
-  ) => {
-    for (final moduleEntry in lineMaps.entries)
-      moduleEntry.key: {
-        for (final symbolEntry in moduleEntry.value.entries)
-          symbolEntry.key: _declarationLast(symbolEntry.value),
-      },
-  };
+  ) =>
+      {
+        for (final moduleEntry in lineMaps.entries)
+          moduleEntry.key: {
+            for (final symbolEntry in moduleEntry.value.entries)
+              symbolEntry.key: _declarationLast(symbolEntry.value),
+          },
+      };
 
   // ─── SV line map helpers ──────────────────────────────────────
 
@@ -218,19 +240,51 @@ class TraceService extends ArtifactProducingService {
         : File(path).absolute.path;
   }
 
+  /// The file path advertised for single-file SystemC output.
+  String get _singleFileScPath {
+    final path = scService?.multiFile == false ? scService?.outputPath : null;
+    return path == null
+        ? '${module.definitionName}.sc'
+        : File(path).absolute.path;
+  }
+
   // ─── Mode-dependent helpers ──────────────────────────────────
 
   /// SV line maps selected by [svOutputMode].
   Map<String, Map<String, List<String>>> get _activeSvLineMaps =>
       svOutputMode == SvOutputMode.singleFile
-      ? singleFileSvLineMaps
-      : svLineMaps;
+          ? singleFileSvLineMaps
+          : svLineMaps;
 
   /// SV file map selected by [svOutputMode].
   Map<String, String> get _activeSvFileMap =>
       svOutputMode == SvOutputMode.singleFile
-      ? singleFileSvFileMap(_singleFileSvPath)
-      : svFileMap;
+          ? singleFileSvFileMap(_singleFileSvPath)
+          : svFileMap;
+
+  /// SystemC line maps selected by [scOutputMode].
+  Map<String, Map<String, List<String>>> get _activeScLineMaps {
+    final service = scService;
+    if (service == null) {
+      return const {};
+    }
+    return _declarationsLast(
+      scOutputMode == ScOutputMode.singleFile
+          ? service.singleFileScLineMaps
+          : service.scLineMaps,
+    );
+  }
+
+  /// SystemC file maps selected by [scOutputMode].
+  Map<String, List<String>> get _activeScFileMap {
+    final service = scService;
+    if (service == null) {
+      return const {};
+    }
+    return scOutputMode == ScOutputMode.singleFile
+        ? service.singleFileScFileMap(_singleFileScPath)
+        : service.scFileMap;
+  }
 
   /// Builds the generic `outputFiles` map (`defName -> lang -> filenames`)
   /// from the active SV file map.
@@ -241,13 +295,18 @@ class TraceService extends ArtifactProducingService {
         e.value,
       ];
     }
+    for (final e in _activeScFileMap.entries) {
+      result.putIfAbsent(e.key, () => <String, List<String>>{})['sc'] = e.value;
+    }
     return result;
   }
 
   /// Builds the generic `outputLineMaps` map
   /// (lang -> defName -> name -> positions) from the active SV line maps.
-  Map<String, Map<String, Map<String, List<String>>>> get _outputLineMaps =>
-      <String, Map<String, Map<String, List<String>>>>{'sv': _activeSvLineMaps};
+  Map<String, Map<String, Map<String, List<String>>>> get _outputLineMaps => {
+        'sv': _activeSvLineMaps,
+        if (scService != null) 'sc': _activeScLineMaps,
+      };
 
   /// Returns the FLC hierarchy with SV line numbers adjusted for
   /// single-file concatenated output.
@@ -264,6 +323,7 @@ class TraceService extends ArtifactProducingService {
   /// `dart:io` is unavailable).
   Map<String, Object>? singleFileFlcHierarchy(
     String svFilename, {
+    String? scFilename,
     Map<String, String>? packageMap,
   }) {
     final outputLineMaps = <String, Map<String, Map<String, List<String>>>>{
@@ -275,6 +335,16 @@ class TraceService extends ArtifactProducingService {
           'sv': [e.value],
         },
     };
+
+    final service = scService;
+    if (service != null) {
+      final filename = scFilename ?? _singleFileScPath;
+      outputLineMaps['sc'] = _declarationsLast(service.singleFileScLineMaps);
+      for (final e in service.singleFileScFileMap(filename).entries) {
+        outputFiles.putIfAbsent(e.key, () => <String, List<String>>{})['sc'] =
+            e.value;
+      }
+    }
 
     return SourceTracer.traceJsonForHierarchy(
       module,
@@ -290,9 +360,13 @@ class TraceService extends ArtifactProducingService {
   /// Produces a single `<definitionName>.flc.json` with file-global
   /// SV line numbers matching [SystemVerilogService.synthOutput]
   /// (and `Module.generateSynth()`).
-  void writeSingleFileFlc(String directory, {String? svFilename}) {
+  void writeSingleFileFlc(
+    String directory, {
+    String? svFilename,
+    String? scFilename,
+  }) {
     final name = svFilename ?? '${module.definitionName}.sv';
-    final hierarchy = singleFileFlcHierarchy(name);
+    final hierarchy = singleFileFlcHierarchy(name, scFilename: scFilename);
     if (hierarchy != null) {
       final dir = Directory(directory)..createSync(recursive: true);
       File('${dir.path}/${module.definitionName}.flc.json').writeAsStringSync(
@@ -355,10 +429,14 @@ class TraceService extends ArtifactProducingService {
       outputLineMap: {
         if (_activeSvLineMaps[definitionName] != null)
           'sv': _activeSvLineMaps[definitionName]!,
+        if (_activeScLineMaps[definitionName] != null)
+          'sc': _activeScLineMaps[definitionName]!,
       },
       outputFile: {
         if (_activeSvFileMap[definitionName] != null)
           'sv': [_activeSvFileMap[definitionName]!],
+        if (_activeScFileMap[definitionName] != null)
+          'sc': _activeScFileMap[definitionName]!,
       },
     );
   }
@@ -404,9 +482,10 @@ class TraceService extends ArtifactProducingService {
 
   /// Writes the FLC JSON hierarchy file to [path] (or [outputPath]).
   ///
-  /// [path] is treated as a directory; a single
-  /// `<definitionName>.flc.json` file is written inside it.  The absolute
-  /// path of the written file is recorded in [writtenPath].
+  /// A [path] ending in `.json` is treated as the exact output file. Other
+  /// paths are treated as directories containing
+  /// `<definitionName>.flc.json`. The absolute file path is recorded in
+  /// [writtenPath].
   ///
   /// Throws a [StateError] if neither [path] nor [outputPath] is set.
   void write([String? path]) {
@@ -416,16 +495,18 @@ class TraceService extends ArtifactProducingService {
         'No output path: pass a directory to write() or set outputPath.',
       );
     }
-    final dir = Directory(directory)..createSync(recursive: true);
+    final file = directory.endsWith('.json')
+        ? File(directory)
+        : File('$directory/${module.definitionName}.flc.json');
+    file.parent.createSync(recursive: true);
 
     // Write the hierarchy FLC.
     final hierarchy = flcHierarchy;
     if (hierarchy != null) {
-      final filePath = '${dir.path}/${module.definitionName}.flc.json';
-      File(filePath).writeAsStringSync(
+      file.writeAsStringSync(
         const JsonEncoder.withIndent('  ').convert(hierarchy),
       );
-      _writtenPath = File(filePath).absolute.path;
+      _writtenPath = file.absolute.path;
     }
   }
 
@@ -451,7 +532,6 @@ class TraceService extends ArtifactProducingService {
   /// Writes the self-contained HTML viewer to [directory].
   void writeFlcHtml(String directory) => writeHtml(directory);
 
-  static const String _unavailable =
-      '{"status":"unavailable",'
+  static const String _unavailable = '{"status":"unavailable",'
       '"reason":"no traces recorded"}';
 }

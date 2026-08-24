@@ -37,7 +37,7 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// Creates a new [SystemCSynthesisResult] for the given [module].
   SystemCSynthesisResult(super.module, super.getInstanceTypeOfModule)
-      : _synthModuleDefinition = SystemCSynthModuleDefinition(module) {
+    : _synthModuleDefinition = SystemCSynthModuleDefinition(module) {
     _findClockResetSignals();
     _portsString = _systemCPorts();
     _buildModuleBody(getInstanceTypeOfModule);
@@ -58,12 +58,12 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
-        SynthFileContents(
-          name: instanceTypeName,
-          description: 'SystemC module definition for $instanceTypeName',
-          contents: _toSystemC(),
-        )
-      ]);
+    SynthFileContents(
+      name: instanceTypeName,
+      description: 'SystemC module definition for $instanceTypeName',
+      contents: _toSystemC(),
+    ),
+  ]);
 
   // ────────────────────────────────────────────────────────────────────
   // Line/column position tracking for debug tracing
@@ -83,7 +83,8 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// names (from [SynthLogic.name]) for signals and
   /// [Module.uniqueInstanceName] for submodule instances.
   Map<String, List<String>> get scLineMap => Map.unmodifiable(
-      _scLineMap.map((k, v) => MapEntry(k, List<String>.unmodifiable(v))));
+    _scLineMap.map((k, v) => MapEntry(k, List<String>.unmodifiable(v))),
+  );
   final Map<String, List<String>> _scLineMap = {};
 
   /// Walks the already-generated [scText] counting newlines, and records
@@ -92,7 +93,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   ///
   /// This mirrors the approach used by the SystemVerilog synthesizer's
   /// `_buildSvLineMap` in the `source_debug` branch, enabling the
-  /// `SignalSourceTracer` to emit FLC data with both SV and SC positions.
+  /// `SourceTracer` to emit FLC data with both SV and SC positions.
   void _buildScLineMap(String scText) {
     _scLineMap.clear();
 
@@ -100,17 +101,27 @@ class SystemCSynthesisResult extends SynthesisResult {
       for (final sig in _synthModuleDefinition.inputs) sig.name,
       for (final sig in _synthModuleDefinition.outputs) sig.name,
       for (final sig in _synthModuleDefinition.inOuts) sig.name,
-      for (final sig in _synthModuleDefinition.internalSignals
-          .where((e) => e.needsDeclaration))
+      for (final sig in _synthModuleDefinition.internalSignals.where(
+        (e) => e.needsDeclaration,
+      ))
         sig.name,
-      for (final smi in _synthModuleDefinition.subModuleInstantiations
-          .where((s) => s.needsInstantiation))
+      for (final smi in _synthModuleDefinition.subModuleInstantiations.where(
+        (s) => s.needsInstantiation,
+      ))
         smi.name,
     };
 
     if (targets.isEmpty) {
       return;
     }
+
+    final outputBoundNames = <String>{
+      for (final smi in _synthModuleDefinition.subModuleInstantiations)
+        if (!_isHandledInline(smi as SystemCSynthSubModuleInstantiation))
+          for (final entry in smi.outputMapping.entries)
+            if (!entry.value.declarationCleared && !entry.value.isConstant)
+              _scName(entry.value.name),
+    };
 
     // Single-pass: tokenize each line once, check tokens against target set.
     // Record the first occurrence (declaration) and any subsequent occurrence
@@ -137,6 +148,10 @@ class SystemCSynthesisResult extends SynthesisResult {
               !list.contains(pos)) {
             // Subsequent occurrence on an assignment LHS — record it.
             list.add(pos);
+          } else if (outputBoundNames.contains(word) &&
+              _isOutputBindingArg(lineText, match.start, match.end) &&
+              !list.contains(pos)) {
+            list.add(pos);
           }
         }
         lineNum++;
@@ -144,6 +159,13 @@ class SystemCSynthesisResult extends SynthesisResult {
       }
     }
   }
+
+  static final RegExp _portCallPrefixRe = RegExp(r'\.\w+\($');
+
+  static bool _isOutputBindingArg(String lineText, int start, int end) =>
+      end < lineText.length &&
+      lineText[end] == ')' &&
+      _portCallPrefixRe.hasMatch(lineText.substring(0, start));
 
   /// Returns true if the identifier ending at [afterIdent] in [lineText] is
   /// followed (after optional whitespace) by a single `=` (and not `==`).
@@ -251,10 +273,11 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   String _buildInternalSignals() {
     final declarations = <String>[];
-    for (final sig in _synthModuleDefinition.internalSignals
-        .where((e) => e.needsDeclaration)
-        .where((e) => !_promotedClockSignals.contains(e.name))
-        .sorted((a, b) => a.name.compareTo(b.name))) {
+    for (final sig
+        in _synthModuleDefinition.internalSignals
+            .where((e) => e.needsDeclaration)
+            .where((e) => !_promotedClockSignals.contains(e.name))
+            .sorted((a, b) => a.name.compareTo(b.name))) {
       final n = _scName(sig.name);
       declarations.add('  ${systemCSignalType(sig.width)} $n{"$n"};');
     }
@@ -277,7 +300,7 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// Groups array elements by parent: parentName → list of (index, elemWidth).
   late final Map<String, List<({int index, int width, String elemName})>>
-      _arrayElementsByParent = _groupArrayElementsByParent();
+  _arrayElementsByParent = _groupArrayElementsByParent();
 
   Map<String, int> _findArrayElementsWritten() {
     final result = <String, int>{};
@@ -321,7 +344,9 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Recursively walks a conditionals tree to find all receivers that
   /// are array elements and adds them to [result].
   void _collectArrayReceiversFromConditionals(
-      List<Conditional> conditionals, Map<String, int> result) {
+    List<Conditional> conditionals,
+    Map<String, int> result,
+  ) {
     for (final c in conditionals) {
       for (final receiver in c.receivers) {
         final sl = _synthModuleDefinition.logicToSynthMap[receiver];
@@ -337,7 +362,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Groups array elements by their root parent signal,
   /// computing flat bit offsets for nested elements.
   Map<String, List<({int index, int width, String elemName})>>
-      _groupArrayElementsByParent() {
+  _groupArrayElementsByParent() {
     final result = <String, List<({int index, int width, String elemName})>>{};
 
     void addElement(SynthLogicArrayElement sl) {
@@ -491,10 +516,12 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Generates an SC_METHOD for inline gates (like SV `assign` stmts).
   _MethodResult? _buildInlineGates() {
     final inlineGates = _synthModuleDefinition.subModuleInstantiations
-        .where((s) =>
-            s.needsInstantiation &&
-            (s.module is InlineSystemVerilog ||
-                _isInlinableSystemVerilogGate(s.module)))
+        .where(
+          (s) =>
+              s.needsInstantiation &&
+              (s.module is InlineSystemVerilog ||
+                  _isInlinableSystemVerilogGate(s.module)),
+        )
         .cast<SystemCSynthSubModuleInstantiation>()
         .toList();
 
@@ -551,7 +578,8 @@ class SystemCSynthesisResult extends SynthesisResult {
             final w = m.width;
             final w1 = w + 1;
             final utype = systemCType(w1);
-            final carryExpr = 'static_cast<bool>'
+            final carryExpr =
+                'static_cast<bool>'
                 '($utype($utype(${vals[0]})'
                 ' + $utype(${vals[1]}))[$w])';
             bodyLines.add('    $dst = $carryExpr;');
@@ -563,11 +591,13 @@ class SystemCSynthesisResult extends SynthesisResult {
         continue;
       }
 
-      assignments.add(_ScMethodAssignment(
-        bodyLines: bodyLines,
-        sensitivities: sensitivities,
-        destinations: destinations,
-      ));
+      assignments.add(
+        _ScMethodAssignment(
+          bodyLines: bodyLines,
+          sensitivities: sensitivities,
+          destinations: destinations,
+        ),
+      );
       ssmi.clearInstantiation();
     }
 
@@ -645,8 +675,9 @@ class SystemCSynthesisResult extends SynthesisResult {
       final w = (m as Module).inputs.values.first.width;
       final outType = systemCType(w);
       final shiftAmtWidth = (m as Module).inputs.values.toList()[1].width;
-      final shiftExpr =
-          shiftAmtWidth == 1 ? '(int)(${vals[1]})' : '(${vals[1]}).to_int()';
+      final shiftExpr = shiftAmtWidth == 1
+          ? '(int)(${vals[1]})'
+          : '(${vals[1]}).to_int()';
       if (m is ARShift) {
         final signedType = w <= 64 ? 'sc_int<$w>' : 'sc_bigint<$w>';
         final shiftOp = '$outType(($signedType(${vals[0]})) >> $shiftExpr)';
@@ -697,8 +728,10 @@ class SystemCSynthesisResult extends SynthesisResult {
         // bits[0]=a[endIndex], ..., bits[N]=a[startIndex]
         // SystemC concat is MSB-first: output MSB = input[endIndex]
         // Use sc_uint<1> (not bool) so SystemC concat operator is invoked
-        final bits = List.generate(m.startIndex - m.endIndex + 1,
-            (i) => 'sc_uint<1>($a[${m.endIndex + i}])');
+        final bits = List.generate(
+          m.startIndex - m.endIndex + 1,
+          (i) => 'sc_uint<1>($a[${m.endIndex + i}])',
+        );
         return '(${bits.join(', ')})';
       }
       final w = m.endIndex - m.startIndex + 1;
@@ -788,7 +821,9 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// the method traces through the inversion chain to find the original port
   /// and flips the edge accordingly (`negedge(~clk) = posedge(clk)`).
   ({String clockName, bool isPort, bool isPosedge}) _resolveClockAndEdge(
-      SynthLogic triggerSL, bool isPosedge) {
+    SynthLogic triggerSL,
+    bool isPosedge,
+  ) {
     final sl = triggerSL.replacement ?? triggerSL;
 
     if (sl.isPort(_synthModuleDefinition.module)) {
@@ -849,10 +884,12 @@ class SystemCSynthesisResult extends SynthesisResult {
         }
 
         // Build maps keyed by port name (what verilogContents expects)
-        final inputsMap = ssmi.inputMapping
-            .map((k, sl) => MapEntry(k, _synthLogicReadExpr(sl)));
-        final outputsMap =
-            ssmi.outputMapping.map((k, sl) => MapEntry(k, _scName(sl.name)));
+        final inputsMap = ssmi.inputMapping.map(
+          (k, sl) => MapEntry(k, _synthLogicReadExpr(sl)),
+        );
+        final outputsMap = ssmi.outputMapping.map(
+          (k, sl) => MapEntry(k, _scName(sl.name)),
+        );
 
         bodyBuf.writeln('  void $name() {');
         for (final c in m.conditionals) {
@@ -870,11 +907,14 @@ class SystemCSynthesisResult extends SynthesisResult {
         // Detect async reset: either explicitly via asyncReset flag, or
         // implicitly when the reset signal is also listed as a trigger
         // (e.g. Sequential.multi([clk, reset], reset: reset, ...)).
-        final isAsync = m.asyncReset ||
+        final isAsync =
+            m.asyncReset ||
             (resetEntry != null &&
-                ssmi.inputMapping.entries.any((e) =>
-                    e.key.contains('trigger') &&
-                    e.value.name == resetEntry.value.name));
+                ssmi.inputMapping.entries.any(
+                  (e) =>
+                      e.key.contains('trigger') &&
+                      e.value.name == resetEntry.value.name,
+                ));
 
         // Resolve ALL trigger entries to (signalName, edge, isPort).
         final triggerEdges = m.triggerEdges;
@@ -895,7 +935,8 @@ class SystemCSynthesisResult extends SynthesisResult {
           if (triggerSL.isConstant) {
             continue;
           }
-          final isPosedge = triggerEdges
+          final isPosedge =
+              triggerEdges
                   .where((t) => t.portName == te.key)
                   .firstOrNull
                   ?.isPosedge ??
@@ -933,16 +974,19 @@ class SystemCSynthesisResult extends SynthesisResult {
             .join(',');
         final groupKey = '$triggerKey|${resetEntry?.value.name ?? '_none_'}';
         final group = clockedGroups.putIfAbsent(
-            groupKey,
-            () => _ClockedGroupData(
-                  resetName: resetEntry?.value.name,
-                  isAsyncReset: isAsync,
-                ));
+          groupKey,
+          () => _ClockedGroupData(
+            resetName: resetEntry?.value.name,
+            isAsyncReset: isAsync,
+          ),
+        );
         // Add all triggers to the group (dedup handled by emission)
         for (final t in uniqueTriggers) {
-          if (!group.triggers.any((existing) =>
-              existing.signalName == t.signalName &&
-              existing.isPosedge == t.isPosedge)) {
+          if (!group.triggers.any(
+            (existing) =>
+                existing.signalName == t.signalName &&
+                existing.isPosedge == t.isPosedge,
+          )) {
             group.triggers.add(t);
           }
         }
@@ -950,10 +994,12 @@ class SystemCSynthesisResult extends SynthesisResult {
           group.isAsyncReset = true;
         }
 
-        final inputsMap = ssmi.inputMapping
-            .map((k, sl) => MapEntry(k, _synthLogicReadExpr(sl)));
-        final outputsMap =
-            ssmi.outputMapping.map((k, sl) => MapEntry(k, _scName(sl.name)));
+        final inputsMap = ssmi.inputMapping.map(
+          (k, sl) => MapEntry(k, _synthLogicReadExpr(sl)),
+        );
+        final outputsMap = ssmi.outputMapping.map(
+          (k, sl) => MapEntry(k, _scName(sl.name)),
+        );
 
         for (final outName in outputsMap.values) {
           group.resetLines.add('    $outName = 0;');
@@ -980,21 +1026,24 @@ class SystemCSynthesisResult extends SynthesisResult {
             .firstOrNull;
         final resetValueEntry = ssmi.inputMapping.entries
             .where(
-                (e) => e.key.contains('resetValue') || e.key.contains('Value'))
+              (e) => e.key.contains('resetValue') || e.key.contains('Value'),
+            )
             .firstOrNull;
         final qSl = ssmi.outputMapping.values.first;
 
         final groupKey =
             '${clkSl.name}:true|${resetEntry?.value.name ?? '_none_'}';
         final group = clockedGroups.putIfAbsent(
-            groupKey,
-            () => _ClockedGroupData(
-                  resetName: resetEntry?.value.name,
-                  isAsyncReset: m.asyncReset,
-                ));
+          groupKey,
+          () => _ClockedGroupData(
+            resetName: resetEntry?.value.name,
+            isAsyncReset: m.asyncReset,
+          ),
+        );
         // FlipFlop always posedge
-        if (!group.triggers
-            .any((t) => t.signalName == clkSl.name && t.isPosedge)) {
+        if (!group.triggers.any(
+          (t) => t.signalName == clkSl.name && t.isPosedge,
+        )) {
           group.triggers.add((
             signalName: clkSl.name,
             isPosedge: true,
@@ -1021,18 +1070,19 @@ class SystemCSynthesisResult extends SynthesisResult {
             '      ${_scName(qSl.name)} = ${_synthLogicReadExpr(dSl)};\n';
         final bodyLine = enEntry != null
             ? '      if (${_synthLogicReadExpr(enEntry.value)}) {\n'
-                '  $assignExpr'
-                '      }\n'
+                  '  $assignExpr'
+                  '      }\n'
             : assignExpr;
 
         // Wrap in sync reset check if needed
         if (resetEntry != null && !m.asyncReset) {
-          group.whileBodyLines
-              .add('      if (${_scName(resetEntry.value.name)}.read()) {\n'
-                  '        ${_scName(qSl.name)} = $resetValExpr;\n'
-                  '      } else {\n'
-                  '  $bodyLine'
-                  '      }\n');
+          group.whileBodyLines.add(
+            '      if (${_scName(resetEntry.value.name)}.read()) {\n'
+            '        ${_scName(qSl.name)} = $resetValExpr;\n'
+            '      } else {\n'
+            '  $bodyLine'
+            '      }\n',
+          );
         } else {
           group.whileBodyLines.add(bodyLine);
         }
@@ -1057,7 +1107,8 @@ class SystemCSynthesisResult extends SynthesisResult {
       // - that signal is a port (sc_in)
       // - only one edge direction
       final distinctSignals = triggers.map((t) => t.signalName).toSet();
-      final useCthread = distinctSignals.length == 1 &&
+      final useCthread =
+          distinctSignals.length == 1 &&
           triggers.first.isPort &&
           triggers.length == 1;
 
@@ -1067,8 +1118,10 @@ class SystemCSynthesisResult extends SynthesisResult {
         final edge = t.isPosedge ? '.pos()' : '.neg()';
         setupBuf.writeln('    SC_CTHREAD($name, $clockRef$edge);');
         if (group.resetName != null && group.isAsyncReset) {
-          setupBuf.writeln('    async_reset_signal_is('
-              '${_scName(group.resetName!)}, true);');
+          setupBuf.writeln(
+            '    async_reset_signal_is('
+            '${_scName(group.resetName!)}, true);',
+          );
         }
 
         bodyBuf.writeln('  void $name() {');
@@ -1104,8 +1157,9 @@ class SystemCSynthesisResult extends SynthesisResult {
           final eventExprs = <String>[];
           for (final t in triggers) {
             final sig = _scName(t.signalName);
-            eventExprs
-                .add('$sig.${t.isPosedge ? 'posedge' : 'negedge'}_event()');
+            eventExprs.add(
+              '$sig.${t.isPosedge ? 'posedge' : 'negedge'}_event()',
+            );
           }
           waitExpr = eventExprs.join(' | ');
         }
@@ -1126,10 +1180,7 @@ class SystemCSynthesisResult extends SynthesisResult {
     if (setupBuf.isEmpty && bodyBuf.isEmpty) {
       return null;
     }
-    return _MethodResult(
-      setup: setupBuf.toString(),
-      body: bodyBuf.toString(),
-    );
+    return _MethodResult(setup: setupBuf.toString(), body: bodyBuf.toString());
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -1147,7 +1198,8 @@ class SystemCSynthesisResult extends SynthesisResult {
       _isInlinableSystemVerilogGate(ssmi.module);
 
   String _buildSubModuleMembers(
-      String Function(Module module) getInstanceTypeOfModule) {
+    String Function(Module module) getInstanceTypeOfModule,
+  ) {
     final lines = <String>[];
     for (final ssmi in _synthModuleDefinition.subModuleInstantiations) {
       ssmi as SystemCSynthSubModuleInstantiation;
@@ -1173,7 +1225,8 @@ class SystemCSynthesisResult extends SynthesisResult {
   final List<String> _constInputInits = [];
 
   String _buildSubModuleBindings(
-      String Function(Module module) getInstanceTypeOfModule) {
+    String Function(Module module) getInstanceTypeOfModule,
+  ) {
     final lines = <String>[];
     var unconnIdx = 0;
     for (final ssmi in _synthModuleDefinition.subModuleInstantiations) {
@@ -1193,18 +1246,23 @@ class SystemCSynthesisResult extends SynthesisResult {
           if (entry.value.isConstant) {
             // Constants can't be bound directly to sc_in ports;
             // create a signal, initialize it, and bind that.
-            final constName = _scName('_const_${ssmi.name}'
-                '_${entry.key}_${_constInputSignals.length}');
+            final constName = _scName(
+              '_const_${ssmi.name}'
+              '_${entry.key}_${_constInputSignals.length}',
+            );
             final w = entry.value.width;
             final c = entry.value.logics.whereType<Const>().first;
             final constVal = _typedConstExpr(c.value, c.width);
-            _constInputSignals
-                .add('  ${systemCSignalType(w)} $constName{"$constName"};');
+            _constInputSignals.add(
+              '  ${systemCSignalType(w)} $constName{"$constName"};',
+            );
             _constInputInits.add('    $constName.write($constVal);');
             lines.add('    ${ssmi.name}.${entry.key}($constName);');
           } else {
-            lines.add('    '
-                '${ssmi.name}.${entry.key}(${_scName(entry.value.name)});');
+            lines.add(
+              '    '
+              '${ssmi.name}.${entry.key}(${_scName(entry.value.name)});',
+            );
           }
         }
       }
@@ -1218,8 +1276,9 @@ class SystemCSynthesisResult extends SynthesisResult {
         if (entry.value.declarationCleared) {
           final dummyName = '_unused_${ssmi.name}_${entry.key}_$unconnIdx';
           final w = entry.value.width;
-          _unconnectedOutputSignals
-              .add('  ${systemCSignalType(w)} $dummyName{"$dummyName"};');
+          _unconnectedOutputSignals.add(
+            '  ${systemCSignalType(w)} $dummyName{"$dummyName"};',
+          );
           lines.add('    ${ssmi.name}.${entry.key}($dummyName);');
           unconnIdx++;
         }
@@ -1252,13 +1311,16 @@ class SystemCSynthesisResult extends SynthesisResult {
         if (!assignment.src.isConstant) {
           sensitivities.add(_sensitivityName(assignment.src));
         }
-        final bodyLine = '    ${_scName(assignment.dst.name)} = '
+        final bodyLine =
+            '    ${_scName(assignment.dst.name)} = '
             '${_synthLogicReadExpr(assignment.src)};';
-        assignments.add(_ScMethodAssignment(
-          bodyLines: [bodyLine],
-          sensitivities: sensitivities,
-          destinations: {_scName(assignment.dst.name)},
-        ));
+        assignments.add(
+          _ScMethodAssignment(
+            bodyLines: [bodyLine],
+            sensitivities: sensitivities,
+            destinations: {_scName(assignment.dst.name)},
+          ),
+        );
       }
     }
 
@@ -1284,18 +1346,22 @@ class SystemCSynthesisResult extends SynthesisResult {
           parts.add('($utype($srcExpr) << ${p.dstLowerIndex})');
         }
       }
-      assignments.add(_ScMethodAssignment(
-        bodyLines: ['    $dstName = ${parts.join(' | ')};'],
-        sensitivities: sensitivities,
-        destinations: {dstName},
-      ));
+      assignments.add(
+        _ScMethodAssignment(
+          bodyLines: ['    $dstName = ${parts.join(' | ')};'],
+          sensitivities: sensitivities,
+          destinations: {dstName},
+        ),
+      );
     }
 
     return _emitGroupedAssignments('wire_assign', assignments);
   }
 
   _MethodResult _emitGroupedAssignments(
-      String methodPrefix, List<_ScMethodAssignment> assignments) {
+    String methodPrefix,
+    List<_ScMethodAssignment> assignments,
+  ) {
     final groups = <_ScMethodAssignmentGroup>[];
 
     for (final assignment in assignments) {
@@ -1325,18 +1391,19 @@ class SystemCSynthesisResult extends SynthesisResult {
         ..writeln();
     }
 
-    return _MethodResult(
-      setup: setupBuf.toString(),
-      body: bodyBuf.toString(),
-    );
+    return _MethodResult(setup: setupBuf.toString(), body: bodyBuf.toString());
   }
 
   // ────────────────────────────────────────────────────────────────────
   // Conditional → SystemC
   // ────────────────────────────────────────────────────────────────────
 
-  String _conditionalToSC(Conditional conditional, int indent,
-      Map<String, String> inputsMap, Map<String, String> outputsMap) {
+  String _conditionalToSC(
+    Conditional conditional,
+    int indent,
+    Map<String, String> inputsMap,
+    Map<String, String> outputsMap,
+  ) {
     final padding = '  ' * indent;
 
     if (conditional is ConditionalAssign) {
@@ -1357,8 +1424,12 @@ class SystemCSynthesisResult extends SynthesisResult {
     return '';
   }
 
-  String _ifToSC(If ifBlock, int indent, Map<String, String> inputsMap,
-      Map<String, String> outputsMap) {
+  String _ifToSC(
+    If ifBlock,
+    int indent,
+    Map<String, String> inputsMap,
+    Map<String, String> outputsMap,
+  ) {
     final padding = '  ' * indent;
     final buf = StringBuffer();
 
@@ -1366,10 +1437,11 @@ class SystemCSynthesisResult extends SynthesisResult {
       final header = iff == ifBlock.iffs.first
           ? 'if'
           : iff is Else
-              ? ' else'
-              : ' else if';
-      final condition =
-          iff is! Else ? ' (${_resolveDriver(iff.condition, inputsMap)})' : '';
+          ? ' else'
+          : ' else if';
+      final condition = iff is! Else
+          ? ' (${_resolveDriver(iff.condition, inputsMap)})'
+          : '';
       buf.write('$padding$header$condition {\n');
       for (final c in iff.then) {
         buf.write(_conditionalToSC(c, indent + 1, inputsMap, outputsMap));
@@ -1380,15 +1452,20 @@ class SystemCSynthesisResult extends SynthesisResult {
     return buf.toString();
   }
 
-  String _caseToSC(Case caseBlock, int indent, Map<String, String> inputsMap,
-      Map<String, String> outputsMap) {
+  String _caseToSC(
+    Case caseBlock,
+    int indent,
+    Map<String, String> inputsMap,
+    Map<String, String> outputsMap,
+  ) {
     final padding = '  ' * indent;
     final buf = StringBuffer();
     final expr = _resolveDriver(caseBlock.expression, inputsMap);
 
     // Check if all case items have compile-time constant values
-    final allConst =
-        caseBlock.items.every((item) => _isConstCaseItem(item.value));
+    final allConst = caseBlock.items.every(
+      (item) => _isConstCaseItem(item.value),
+    );
 
     // CaseZ requires mask matching — always use if/else
     // Non-const case items also require if/else
@@ -1439,18 +1516,23 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// Converts a Case/CaseZ block to if/else chain (for non-const items
   /// or CaseZ with z-masks).
   String _caseToIfElseSC(
-      Case caseBlock,
-      int indent,
-      Map<String, String> inputsMap,
-      Map<String, String> outputsMap,
-      String expr) {
+    Case caseBlock,
+    int indent,
+    Map<String, String> inputsMap,
+    Map<String, String> outputsMap,
+    String expr,
+  ) {
     final padding = '  ' * indent;
     final buf = StringBuffer();
 
     for (var i = 0; i < caseBlock.items.length; i++) {
       final item = caseBlock.items[i];
-      final condition = _caseItemCondition(item.value, expr, inputsMap,
-          isCaseZ: caseBlock is CaseZ);
+      final condition = _caseItemCondition(
+        item.value,
+        expr,
+        inputsMap,
+        isCaseZ: caseBlock is CaseZ,
+      );
       final header = i == 0 ? 'if' : ' else if';
       buf.write('$padding$header ($condition) {\n');
       for (final c in item.then) {
@@ -1471,8 +1553,11 @@ class SystemCSynthesisResult extends SynthesisResult {
 
   /// Generates the condition expression for a case item comparison.
   String _caseItemCondition(
-      dynamic value, String expr, Map<String, String> inputsMap,
-      {bool isCaseZ = false}) {
+    dynamic value,
+    String expr,
+    Map<String, String> inputsMap, {
+    bool isCaseZ = false,
+  }) {
     // Extract LogicValue from Const for CaseZ mask matching
     LogicValue? lv;
     if (value is Const) {
@@ -1589,7 +1674,8 @@ class SystemCSynthesisResult extends SynthesisResult {
   // ────────────────────────────────────────────────────────────────────
 
   void _buildModuleBody(
-      String Function(Module module) getInstanceTypeOfModule) {
+    String Function(Module module) getInstanceTypeOfModule,
+  ) {
     _subMembers = _buildSubModuleMembers(getInstanceTypeOfModule);
 
     final inlineGates = _buildInlineGates();
@@ -1663,10 +1749,7 @@ class SystemCSynthesisResult extends SynthesisResult {
         ..writeln();
     }
 
-    return _MethodResult(
-      setup: setupBuf.toString(),
-      body: bodyBuf.toString(),
-    );
+    return _MethodResult(setup: setupBuf.toString(), body: bodyBuf.toString());
   }
 
   // ────────────────────────────────────────────────────────────────────
