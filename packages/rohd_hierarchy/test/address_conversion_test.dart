@@ -74,6 +74,7 @@ void main() {
 
       root = HierarchyOccurrence(
         name: 'Top',
+        definition: 'TopDefinition',
         children: [cpu, mem],
       )..buildAddresses();
 
@@ -89,6 +90,12 @@ void main() {
 
       test('module path resolves correctly', () {
         final addr = service.pathnameToAddress('Top/cpu');
+        expect(addr, isNotNull);
+        expect(addr!.path, equals([0]));
+      });
+
+      test('top definition name is accepted as a root prefix', () {
+        final addr = service.pathnameToAddress('TopDefinition/cpu');
         expect(addr, isNotNull);
         expect(addr!.path, equals([0]));
       });
@@ -216,8 +223,9 @@ void main() {
       });
 
       test('nested address returns correct node', () {
-        final node =
-            service.occurrenceByAddress(const OccurrenceAddress([0, 0]));
+        final node = service.occurrenceByAddress(
+          const OccurrenceAddress([0, 0]),
+        );
         expect(node?.name, equals('alu'));
       });
 

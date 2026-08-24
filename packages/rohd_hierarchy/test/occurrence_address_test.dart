@@ -247,12 +247,39 @@ void main() {
         signals: [
           SignalOccurrence(
               name: 'a', width: 1, direction: 'input', portIndex: 0),
-          SignalOccurrence(name: 'b', width: 1),
           SignalOccurrence(
               name: 'c', width: 1, direction: 'output', portIndex: 1),
+          SignalOccurrence(name: 'b', width: 1),
         ],
+        portCount: 2,
       );
       expect(occ.portCount, equals(2));
+    });
+
+    test('port lookup excludes internal signals', () {
+      final input = SignalOccurrence(name: 'a', width: 1, direction: 'input');
+      final occ = HierarchyOccurrence(
+        name: 'X',
+        signals: [
+          input,
+          SignalOccurrence(name: 'internal', width: 1),
+        ],
+      );
+
+      expect(occ.portByName('a'), same(input));
+      expect(occ.portByName('internal'), isNull);
+    });
+
+    test('ports use the producer-provided signal prefix', () {
+      final port = SignalOccurrence(name: 'a', width: 1, direction: 'input');
+      final internal = SignalOccurrence(name: 'internal', width: 1);
+      final occ = HierarchyOccurrence(
+        name: 'X',
+        signals: [port, internal],
+        portCount: 1,
+      );
+
+      expect(occ.ports, [port]);
     });
 
     test('all-ports occurrence: indices match list order', () {

@@ -7,6 +7,8 @@
 // 2026 July
 // Author: ROHD Contributors
 
+export 'package:rohd_hierarchy/rohd_hierarchy.dart';
+
 export 'src/diagnostics/diagnostics.dart';
 export 'src/exceptions/exceptions.dart';
 export 'src/external.dart';
