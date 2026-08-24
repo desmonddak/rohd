@@ -5,6 +5,9 @@
 // Barrel file for rohd_devtools UI widgets.
 //
 // NOTE: standalone_app_shell.dart is excluded because it imports this barrel.
+//
+// 2026 June 3
+// Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 export 'details_help_button.dart';
 export 'devtool_appbar.dart';
@@ -13,6 +16,7 @@ export 'devtools_help_button.dart';
 export 'module_tree_card.dart';
 export 'module_tree_details_navbar.dart';
 export 'platform_icon.dart';
+export 'rohd_design_shell.dart';
 export 'schematic_icon.dart';
 export 'signal_details_card.dart';
 export 'signal_table.dart';

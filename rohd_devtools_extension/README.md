@@ -81,3 +81,28 @@ the Chrome platform for browser-based widget tests.
 ```sh
 flutter test --platform chrome test/
 ```
+
+## Debug Shells
+
+The DTD-attached terminal shell and the DevTools **ROHD Debug Shell** use the
+same target-owned command session. Both preserve aliases and command history
+for the lifetime of the shell. Use Tab to complete commands, aliases, and
+`transparent`; Tab on an exact `find-cell` or `find-signal` path completes from
+the live hierarchy. Press Tab again to list ambiguous candidates. Up/Down or
+Ctrl-P/Ctrl-N navigate history. Ctrl-A/Ctrl-E move to the start/end of the
+line; Ctrl-U/Ctrl-K/Ctrl-W delete text; Ctrl-L clears the terminal; Ctrl-C
+cancels a running command; Ctrl-D deletes forward or exits on an empty line.
+
+The DevTools panel provides command output scrollback, input history, and
+target-backed Tab completion below the hierarchy view.
+
+```sh
+dart run bin/rohd_shell.dart --dtd "$DTD_URI"
+```
+
+Use `find-cells <regex> [root-alias] [transparent]` or
+`find-signals <regex> [root-alias] [transparent]` to restrict a hierarchy
+search to leaf cells or leaf-owned signals. These commands use the same
+hierarchy regex/glob engine as DevTools widgets: `*` and `?` are glob
+wildcards, `**` crosses hierarchy levels, and regex operators work within each
+path segment. Unqualified patterns search at any hierarchy depth.

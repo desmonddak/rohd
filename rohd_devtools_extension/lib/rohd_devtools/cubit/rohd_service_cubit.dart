@@ -46,6 +46,10 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
   String? get rohdIsolateId => _rohdIsolateId;
   String? _rohdIsolateId;
 
+  /// The VM service that owns the current ROHD isolate.
+  vm.VmService? get activeVmService =>
+      (_manageServiceManager ? serviceManager : _localServiceManager)?.service;
+
   /// Listener for service connection state changes.
   void Function()? _connectionListener;
 

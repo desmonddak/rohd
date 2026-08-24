@@ -9,15 +9,19 @@
 
 import 'dart:async';
 
+import 'package:dtd/dtd.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cli/rohd_design_dtd_service.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/connection_state_machine.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/vm_connection_strategy.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/view/tree_structure_page.dart';
+import 'package:vm_service/vm_service.dart';
 
 /// Configuration for the standalone ROHD DevTools app shell.
 class StandaloneAppConfig {
@@ -103,6 +107,8 @@ class _StandaloneDevToolsPageState
   late final SelectedModuleCubit _selectedModuleCubit = SelectedModuleCubit();
   late final SignalSearchTermCubit _signalSearchTermCubit =
       SignalSearchTermCubit();
+  RohdDesignDtdService? _designDtdService;
+  VmServiceRohdDesignTarget? _commandTarget;
 
   @override
 
@@ -159,6 +165,7 @@ class _StandaloneDevToolsPageState
 
   /// Handles a successful VM connection by configuring the ROHD service.
   Future<void> onVmConnected(VmConnectionResult result, String uri) async {
+    await _configureDesignDtdService(result.vmService, result.isolateId);
     await _rohdServiceCubit.configureStandaloneVmService(
       result.vmService,
       result.isolateId,
@@ -176,6 +183,7 @@ class _StandaloneDevToolsPageState
     required VmConnectionTransition transition,
   }) async {
     _rohdServiceCubit.treeService = null;
+    _commandTarget = null;
   }
 
   @override
@@ -195,6 +203,7 @@ class _StandaloneDevToolsPageState
     VmConnectionResult result,
     String uri,
   ) async {
+    await _configureDesignDtdService(result.vmService, result.isolateId);
     await _rohdServiceCubit.configureStandaloneVmService(
       result.vmService,
       result.isolateId,
@@ -212,6 +221,43 @@ class _StandaloneDevToolsPageState
     };
 
     connectionStateMachine.handleEvent(HierarchyLoadResult(success: success));
+  }
+
+  @override
+  void onDtdConnected(DartToolingDaemon dtd) {
+    final service = _designDtdService;
+    if (service != null) {
+      unawaited(_registerDesignDtdService(service, dtd));
+    }
+  }
+
+  Future<void> _configureDesignDtdService(
+    VmService vmService,
+    String isolateId,
+  ) async {
+    final target = VmServiceRohdDesignTarget(vmService, isolateId);
+    _commandTarget = target;
+    final existing = _designDtdService;
+    if (existing == null) {
+      _designDtdService = RohdDesignDtdService(target.call);
+    } else {
+      existing.target = target.call;
+    }
+    final dtd = persistentDtd;
+    if (dtd != null && !dtd.isClosed) {
+      await _registerDesignDtdService(_designDtdService!, dtd);
+    }
+  }
+
+  Future<void> _registerDesignDtdService(
+    RohdDesignDtdService service,
+    DartToolingDaemon dtd,
+  ) async {
+    try {
+      await service.register(dtd);
+    } on Object catch (error) {
+      debugPrint('Failed to register ROHD design DTD service: $error');
+    }
   }
 
   @override
@@ -373,7 +419,21 @@ class _StandaloneDevToolsPageState
                 BlocProvider.value(value: _signalSearchTermCubit),
                 BlocProvider(create: (context) => DetailsTabCubit()),
               ],
-              child: TreeStructurePage(screenSize: MediaQuery.of(context).size),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: TreeStructurePage(
+                      screenSize: MediaQuery.of(context).size,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 240,
+                    child: RohdDesignShell(
+                      targetProvider: () async => _commandTarget,
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }

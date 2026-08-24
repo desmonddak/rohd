@@ -6,6 +6,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
+executables:
+  rohd-shell: rohd_shell
+
 environment:
  sdk: ^3.6.0
   
@@ -21,6 +24,12 @@ dependencies:
   logging: ^1.2.0
   rohd_devtools_widgets:
     path: packages/rohd_devtools_widgets
+  rohd_hierarchy:
+    path: ../packages/rohd_hierarchy
+  rohd_schematic_viewer:
+    path: rohd-schematic-viewer
+  rohd_waveform:
+    path: ../packages/rohd_waveform
   vm_service: ^14.3.1
   web: ^1.0.0
   web_socket_channel: ^3.0.0
@@ -31,13 +40,17 @@ dev_dependencies:
     sdk: flutter
   mocktail: ^1.0.2
   path: ^1.9.0
-  
+
+dependency_overrides:
+  rohd_hierarchy:
+    path: ../packages/rohd_hierarchy
+  rohd_waveform:
+    path: ../packages/rohd_waveform
+  rohd:
+    path: ../
+
 flutter:
   uses-material-design: true
   assets:
     - assets/help/
     - assets/icons/
-
-dependency_overrides:
-  rohd:
-    path: ../

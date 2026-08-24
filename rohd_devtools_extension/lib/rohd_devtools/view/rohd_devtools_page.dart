@@ -10,6 +10,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cli/rohd_design_dtd_service.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
@@ -77,7 +78,29 @@ class _RohdExtensionModuleState extends State<RohdExtensionModule> {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-        appBar: const DevtoolAppBar(),
-        body: TreeStructurePage(screenSize: screenSize));
+      appBar: const DevtoolAppBar(),
+      body: Column(
+        children: [
+          Expanded(child: TreeStructurePage(screenSize: screenSize)),
+          SizedBox(
+            height: 240,
+            child: RohdDesignShell(
+              targetProvider: () async {
+                final rohdService = context.read<RohdServiceCubit>();
+                if (rohdService.activeVmService == null ||
+                    rohdService.rohdIsolateId == null) {
+                  await rohdService.evalModuleTree();
+                }
+                final vmService = rohdService.activeVmService;
+                final isolateId = rohdService.rohdIsolateId;
+                return vmService == null || isolateId == null
+                    ? null
+                    : VmServiceRohdDesignTarget(vmService, isolateId);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
