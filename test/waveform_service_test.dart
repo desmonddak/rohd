@@ -59,6 +59,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
     ModuleServices.instance.reset();
+    WaveformDataService.instance.clear();
   });
 
   test('registers with ModuleServices by default', () async {
@@ -77,6 +78,30 @@ void main() {
     expect(waveformJson, contains('"format":"vcd"'));
 
     File(dumpPath).deleteSync();
+  });
+
+  test('registered netlist records compact waveform data', () async {
+    final a = Logic(name: 'a');
+    final mod = _SimpleWaveModule(a);
+    await mod.build();
+
+    NetlistService(mod);
+
+    final service = WaveformDataService.instance;
+    final entry = service.signalAddressMap.entries.singleWhere(
+      (entry) => entry.key.endsWith('/a'),
+    );
+    final result = jsonDecode(
+      service.getWaveformsCompactJSON(jsonEncode([entry.value]), 0, 0),
+    ) as List<dynamic>;
+
+    expect(result, hasLength(1));
+    expect((result.single as Map<String, dynamic>)['i'], entry.value);
+    expect(
+      (result.single as Map<String, dynamic>)['d'],
+      isNotEmpty,
+      reason: 'The registered netlist must initialize waveform recording.',
+    );
   });
 
   test('captures waveform to VCD output path', () async {
