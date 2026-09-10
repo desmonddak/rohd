@@ -23,12 +23,15 @@ const fs = require('fs');
  * @param {import('vscode').OutputChannel} [output]
  * @returns {Promise<string|null>}
  */
-async function resolveFlcPath(documentUri, output) {
+async function resolveFlcPathWithAvailability(documentUri, output) {
   try {
     const result = await vscode.commands.executeCommand('rohd.resolveFlcPath', {
       documentFsPath: documentUri.fsPath,
     });
-    return result ?? null;
+    return {
+      extensionAvailable: true,
+      flcPath: result ?? null,
+    };
   } catch (_) {
     // rohd_extension not installed - fall back to local convention.
     const fsPath = documentUri.fsPath;
@@ -36,10 +39,23 @@ async function resolveFlcPath(documentUri, output) {
     const base = path.basename(fsPath);
     // .vcd/.fst/.ghw/.rohd.json -> .flc.json
     const flcName = base.replace(/\.(vcd|fst|ghw|rohd\.json)$/i, '.flc.json');
-    if (flcName === base) return null;
+    if (flcName === base) {
+      return {
+        extensionAvailable: false,
+        flcPath: null,
+      };
+    }
     const flcPath = path.join(dir, flcName);
-    return fs.existsSync(flcPath) ? flcPath : null;
+    return {
+      extensionAvailable: false,
+      flcPath: fs.existsSync(flcPath) ? flcPath : null,
+    };
   }
+}
+
+async function resolveFlcPath(documentUri, output) {
+  const { flcPath } = await resolveFlcPathWithAvailability(documentUri, output);
+  return flcPath;
 }
 
 /**
@@ -55,10 +71,13 @@ async function resolveFlcPath(documentUri, output) {
  * @returns {Promise<object>} matching RohdModuleInfo.toJson() schema
  */
 async function buildModuleInfo(documentUri, moduleName, instancePath, output) {
-  const flcPath = await resolveFlcPath(documentUri, output);
+  const { extensionAvailable, flcPath } = await resolveFlcPathWithAvailability(
+    documentUri,
+    output,
+  );
   if (!flcPath) {
     return {
-      extensionAvailable: true,
+      extensionAvailable,
       module: moduleName,
       formats: {},
       error: 'No .flc.json sidecar found. Generate with TraceService.writeFlcFiles().',
@@ -116,7 +135,7 @@ async function buildModuleInfo(documentUri, moduleName, instancePath, output) {
   } catch (e) {
     if (output) output.appendLine('[moduleInfo] rohd.queryModule failed: ' + e.message);
     return {
-      extensionAvailable: true,
+      extensionAvailable: false,
       module: moduleName,
       formats: {},
       error: 'Install the ROHD extension for source format detection.',
