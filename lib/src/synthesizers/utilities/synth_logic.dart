@@ -108,8 +108,7 @@ class SynthLogic {
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
-      logics.first.isNet ||
-      (isArray && (logics.first as LogicArrayOf<Logic>).isNet);
+      logics.first.isNet || (isArray && (logics.first as BaseLogicArray).isNet);
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
@@ -201,7 +200,7 @@ class SynthLogic {
   bool get mergeable =>
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
 
-  /// True only if this represents a [LogicArrayOf].
+  /// True only if this represents a [BaseLogicArray].
   final bool isArray;
 
   /// The chosen name of this.
@@ -266,7 +265,7 @@ class SynthLogic {
     required this.parentSynthModuleDefinition,
     Naming? namingOverride,
     bool constNameDisallowed = false,
-  })  : isArray = initialLogic is LogicArrayOf<Logic>,
+  })  : isArray = initialLogic is BaseLogicArray,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
@@ -385,7 +384,7 @@ class SynthLogic {
     final logic = logics.first;
 
     if (isArray) {
-      final logicArr = logic as LogicArrayOf<Logic>;
+      final logicArr = logic as BaseLogicArray;
 
       final packedDimsBuf = StringBuffer();
       final unpackedDimsBuf = StringBuffer();
@@ -482,7 +481,7 @@ class SynthLogicPackedBitReference extends SynthLogic {
   }
 }
 
-/// Represents an element of a [LogicArrayOf].
+/// Represents an element of a [BaseLogicArray].
 ///
 /// Does not fully override or properly implement all characteristics of
 /// [SynthLogic], so this should be used cautiously.
@@ -557,13 +556,13 @@ class SynthLogicArrayElement extends SynthLogic {
   /// The element of the [parentArray].
   final Logic logic;
 
-  /// Creates an instance of an element of a [LogicArrayOf].
+  /// Creates an instance of an element of a [BaseLogicArray].
   SynthLogicArrayElement(
     this.logic, {
     required super.parentSynthModuleDefinition,
   })  : assert(
           logic.isArrayMember,
-          'Should only be used for elements in a LogicArrayOf',
+          'Should only be used for elements in a BaseLogicArray',
         ),
         super(logic) {
     // make sure we have created the synthLogic for the parent array
@@ -576,7 +575,7 @@ class SynthLogicArrayElement extends SynthLogic {
       ' logics contained: ${logics.map((e) => e.name).toList()}';
 }
 
-/// Represents a scalar field within a structured [LogicArrayOf] element.
+/// Represents a scalar field within a structured [BaseLogicArray] element.
 ///
 /// The field has no standalone declaration: it is selected from the packed
 /// array element that contains it.
@@ -589,7 +588,7 @@ class SynthLogicArrayStructureElement extends SynthLogic {
     var current = logic;
     var parent = current.parentStructure;
     while (parent != null) {
-      if (parent is LogicArrayOf<Logic>) {
+      if (parent is BaseLogicArray) {
         current = parent;
         parent = current.parentStructure;
       } else {
@@ -605,7 +604,7 @@ class SynthLogicArrayStructureElement extends SynthLogic {
     var current = logic;
     var parent = current.parentStructure;
     while (parent != null) {
-      if (parent is LogicArrayOf<Logic>) {
+      if (parent is BaseLogicArray) {
         yield current;
       }
       current = parent;
@@ -672,7 +671,7 @@ class SynthLogicArrayStructureElement extends SynthLogic {
     var current = logic;
     var parent = current.parentStructure;
     while (parent != null) {
-      if (parent is LogicArrayOf<Logic>) {
+      if (parent is BaseLogicArray) {
         return current;
       }
       current = parent;

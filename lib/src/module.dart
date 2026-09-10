@@ -713,7 +713,9 @@ abstract class Module {
   ///
   /// This is a good way to construct [input]s that have matching widths or
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
-  /// [input]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  /// [input]. You can use this on a [Logic], [LogicArray],
+  /// [TypedLogicArray], or [LogicStructure]. A [TypedLogicArray] retains both
+  /// its hardware element type and semantic value type.
   ///
   /// The [source] cannot be or contain any [LogicNet]s. If [source] is a
   /// [Const], the [LogicType] must be set to [Logic], since [Const]s cannot be
@@ -788,7 +790,7 @@ abstract class Module {
     _inOutDrivers.add(source);
 
     // we need to properly detect all inout sources, even for arrays
-    if (source.isArrayMember || source is LogicArrayOf<Logic>) {
+    if (source.isArrayMember || source is BaseLogicArray) {
       final sourceElems = TraverseableCollection<Logic>()..add(source);
       for (var i = 0; i < sourceElems.length; i++) {
         final sei = sourceElems[i];
@@ -798,7 +800,7 @@ abstract class Module {
           sourceElems.add(sei.parentStructure!);
         }
 
-        if (sei is LogicArrayOf<Logic>) {
+        if (sei is BaseLogicArray) {
           sourceElems.addAll(sei.elements);
         }
       }
@@ -831,7 +833,9 @@ abstract class Module {
   ///
   /// This is a good way to construct [inOut]s that have matching widths or
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
-  /// [inOut]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  /// [inOut]. You can use this on a [Logic], [LogicArray],
+  /// [TypedLogicArray], or [LogicStructure]. A [TypedLogicArray] retains both
+  /// its hardware element type and semantic value type.
   ///
   /// The [source] must be or exclusively contain [LogicNet]s. If [source] is a
   /// [Const] (or is a [LogicStructure] that includes a [Const]), the
@@ -980,7 +984,9 @@ abstract class Module {
   ///
   /// This is a good way to construct [output]s that have matching widths or
   /// dimensions to another signal, or to make a [LogicStructure] an [output].
-  /// You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  /// You can use this on a [Logic], [LogicArray], [TypedLogicArray], or
+  /// [LogicStructure]. A [TypedLogicArray] retains both its hardware element
+  /// type and semantic value type.
   ///
   /// The [logicGenerator] cannot create ports that are or contain any
   /// [LogicNet]s in them. If a [Const] is generated (or included in a
@@ -1073,7 +1079,7 @@ abstract class Module {
         sourceElems.add(sei.parentStructure!);
       }
 
-      if (sei is LogicArrayOf<Logic>) {
+      if (sei is BaseLogicArray) {
         sourceElems.addAll(sei.elements);
       }
     }
