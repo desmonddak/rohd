@@ -35,9 +35,7 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
         with:
-          # Keep the formatting baseline compatible with the package's
-          # minimum supported Dart SDK.
-          sdk: 3.4.0
+          sdk: 3.6.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
