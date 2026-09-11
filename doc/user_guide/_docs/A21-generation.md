@@ -28,6 +28,33 @@ void main() async {
 
 The `generateSynth` function will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
 
+## Generating a netlist
+
+Use `NetlistSynthesizer` to generate a Yosys-compatible JSON netlist instead
+of SystemVerilog. Build the top-level module before synthesis, then call
+`synthesizeToJson`:
+
+```dart
+import 'dart:io';
+
+import 'package:rohd/rohd.dart';
+
+void main() async {
+  final myModule = MyModule();
+  await myModule.build();
+
+  final netlistJson = NetlistSynthesizer().synthesizeToJson(myModule);
+  await File('build/my_hardware.rohd.json').writeAsString(netlistJson);
+}
+```
+
+The JSON contains a `creator`, format `version`, and a `modules` map. Each
+module entry contains `attributes`, `ports`, `cells`, and `netnames`.
+`NetlistSynthesizerConfiguration` controls optional netlist generation
+behavior, such as slim output for hierarchy loading. For access to individual
+per-module synthesis results or generated file contents, construct a
+`SynthBuilder` with a `NetlistSynthesizer`.
+
 ## Controlling port types
 
 Generated ports default to `input logic`, `output logic`, and `inout wire`, preserving the traditional ROHD declarations. Use a `SystemVerilogSynthesizerConfiguration` to independently control whether object types, such as `wire` and `var`, and data types, such as `logic`, are explicit for each port direction:

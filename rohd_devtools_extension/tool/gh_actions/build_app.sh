@@ -43,7 +43,7 @@ required_files=(
   build/web/index.html
   build/web/flutter_bootstrap.js
   build/web/main.dart.js
-  build/web/assets/AssetManifest.bin
+  build/web/assets/AssetManifest.bin.json
 )
 
 for required_file in "${required_files[@]}"; do
