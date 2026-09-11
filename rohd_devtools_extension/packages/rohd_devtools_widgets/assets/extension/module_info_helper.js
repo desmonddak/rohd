@@ -21,7 +21,7 @@ const fs = require('fs');
  *
  * @param {import('vscode').Uri} documentUri
  * @param {import('vscode').OutputChannel} [output]
- * @returns {Promise<string|null>}
+ * @returns {Promise<{extensionAvailable: boolean, flcPath: string|null}>}
  */
 async function resolveFlcPathWithAvailability(documentUri, output) {
   try {
@@ -53,6 +53,13 @@ async function resolveFlcPathWithAvailability(documentUri, output) {
   }
 }
 
+/**
+ * Resolve the `.flc.json` sidecar path for a given document URI.
+ *
+ * @param {import('vscode').Uri} documentUri
+ * @param {import('vscode').OutputChannel} [output]
+ * @returns {Promise<string|null>}
+ */
 async function resolveFlcPath(documentUri, output) {
   const { flcPath } = await resolveFlcPathWithAvailability(documentUri, output);
   return flcPath;

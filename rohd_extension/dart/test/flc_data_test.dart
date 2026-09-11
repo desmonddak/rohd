@@ -355,6 +355,27 @@ void main() {
       );
     });
 
+    test('rejects a malformed file table without shifting frame indexes', () {
+      final flc = FlcData.fromNetlistJson({
+        'files': ['lib/src/a.dart', null, 'lib/src/b.dart'],
+        'modules': {
+          'Top': {
+            'attributes': {
+              'rohd.src_trace': {
+                'signals': {
+                  'indexedByOriginalTable': ['2:10:1'],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      expect(flc.isEmpty, isTrue);
+      expect(flc.files, isEmpty);
+      expect(flc.lookupSignal('Top', 'indexedByOriginalTable'), isNull);
+    });
+
     test('returns empty data for absent or malformed trace attributes', () {
       final absentAttributes = FlcData.fromNetlistJson({
         'files': ['lib/src/top.dart'],

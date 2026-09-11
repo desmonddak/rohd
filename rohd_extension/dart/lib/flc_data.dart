@@ -250,9 +250,13 @@ class FlcData {
   /// data, but store signal and instance maps directly on each module:
   /// `modules.<module>.attributes.rohd.src_trace`.
   factory FlcData.fromNetlistJson(Map<String, dynamic> json) {
-    final files =
-        (json['files'] as List<dynamic>?)?.whereType<String>().toList() ??
-            <String>[];
+    final rawFiles = json['files'];
+    if (rawFiles is! List || rawFiles.any((file) => file is! String)) {
+      return FlcData.empty();
+    }
+    // Frame indexes address this table directly, so do not filter malformed
+    // entries and accidentally shift the remaining paths.
+    final files = rawFiles.cast<String>();
     final rawModules = json['modules'];
     if (rawModules is! Map) {
       return FlcData.empty();
