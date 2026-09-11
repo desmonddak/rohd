@@ -36,32 +36,7 @@ You can also open this repository in a GitHub Codespace to run the example in yo
 - [Attend the ROHD Forum meetings](https://intel.github.io/rohd-website/forum/rohd-forum/)
 - [GitHub Discussions](https://github.com/intel/rohd/discussions)
 
-## Generating a netlist
 
-Generate a Yosys-compatible JSON netlist from a built top-level module with
-`NetlistSynthesizer` and `SynthBuilder`. `generateCombinedJson` emits one
-netlist document for the complete synthesized hierarchy. Replace `MyModule`
-with your own top-level module:
-
-```dart
-import 'dart:io';
-
-import 'package:rohd/rohd.dart';
-
-void main() async {
-  final myModule = MyModule();
-  await myModule.build();
-
-  final synthesizer = NetlistSynthesizer();
-  final builder = SynthBuilder(myModule, synthesizer);
-  final netlistJson = synthesizer.generateCombinedJson(builder, myModule);
-  print(netlistJson);
-
-  final outputFile = File('build/my_hardware.rohd.json');
-  await outputFile.parent.create(recursive: true);
-  await outputFile.writeAsString(netlistJson);
-}
-```
 
 ## About ROHD
 
