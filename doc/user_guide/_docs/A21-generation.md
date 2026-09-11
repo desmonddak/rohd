@@ -31,8 +31,8 @@ The `generateSynth` function will return a `String` with the SystemVerilog `modu
 ## Generating a netlist
 
 Use `NetlistSynthesizer` to generate a Yosys-compatible JSON netlist instead
-of SystemVerilog. Build the top-level module before synthesis, then call
-`synthesizeToJson`:
+of SystemVerilog. Build the top-level module before synthesis, then create a
+`SynthBuilder` and call `generateCombinedJson`:
 
 ```dart
 import 'dart:io';
@@ -43,17 +43,22 @@ void main() async {
   final myModule = MyModule();
   await myModule.build();
 
-  final netlistJson = NetlistSynthesizer().synthesizeToJson(myModule);
+  final synthesizer = NetlistSynthesizer();
+  final builder = SynthBuilder(myModule, synthesizer);
+  final netlistJson = synthesizer.generateCombinedJson(builder, myModule);
+  print(netlistJson);
+
   await File('build/my_hardware.rohd.json').writeAsString(netlistJson);
 }
 ```
 
-The JSON contains a `creator`, format `version`, and a `modules` map. Each
-module entry contains `attributes`, `ports`, `cells`, and `netnames`.
+The JSON contains a `creator`, format `version`, and a `modules` map containing
+the complete synthesized hierarchy. Each module entry contains `attributes`,
+`ports`, `cells`, and `netnames`.
 `NetlistSynthesizerConfiguration` controls optional netlist generation
-behavior, such as slim output for hierarchy loading. For access to individual
-per-module synthesis results or generated file contents, construct a
-`SynthBuilder` with a `NetlistSynthesizer`.
+behavior, such as slim output for hierarchy loading. The same `SynthBuilder`
+also provides individual per-module synthesis results and generated file
+contents.
 
 ## Controlling port types
 
