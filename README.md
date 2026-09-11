@@ -36,8 +36,6 @@ You can also open this repository in a GitHub Codespace to run the example in yo
 - [Attend the ROHD Forum meetings](https://intel.github.io/rohd-website/forum/rohd-forum/)
 - [GitHub Discussions](https://github.com/intel/rohd/discussions)
 
-
-
 ## About ROHD
 
 - Full power of the modern **Dart language** for hardware design and verification
