@@ -1,0 +1,11 @@
+name: rohd_analyzer_cache_repro
+description: Minimal semantic analyzer plugin used to reproduce cache behavior.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: '>=3.11.0 <4.0.0'
+
+dependencies:
+  analysis_server_plugin: 0.3.23
+  analyzer: 14.4.0
