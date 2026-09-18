@@ -49,14 +49,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
   /// one or zero.
-  // ignore: avoid_positional_boolean_parameters
-  static LogicValue ofBool(bool value) => value ? one : zero;
+  static LogicValue ofBool<T extends bool>(T value) => value ? one : zero;
 
   /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
   /// one or zero.
   @Deprecated('Use `ofBool` instead.')
-  // ignore: avoid_positional_boolean_parameters
-  static LogicValue fromBool(bool value) => ofBool(value);
+  static LogicValue fromBool<T extends bool>(T value) => ofBool(value);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width] number
   /// of bits.
@@ -706,9 +704,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         final s = [
           if (chunkString == 'z' * chunkString.length)
-            (span == 1 ? 'z' : 'Z')
+            if (span == 1) 'z' else 'Z'
           else if (chunkString == 'x' * chunkString.length)
-            (span == 1 ? 'x' : 'X')
+            if (span == 1) 'x' else 'X'
           else if (chunkString.contains('z') | chunkString.contains('x'))
             '>${_reverse(chunkString)}<'
           else

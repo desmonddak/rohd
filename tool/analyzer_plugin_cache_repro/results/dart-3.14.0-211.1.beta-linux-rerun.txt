@@ -1,0 +1,66 @@
+ROHD analyzer plugin cache reproduction
+timestamp_utc=2026-09-17T22:52:49Z
+commit=ea754c1fe863a2852c59e13ef7a535ad266ad254
+platform=Linux flutter 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+Dart SDK version: 3.14.0-211.1.beta (beta) (Wed Sep 9 04:11:05 2026 -0700) on "linux_x64"
+iterations=3
+
+Resolving dependencies...
+Resolving dependencies...
+Downloading packages...
+Got dependencies!
+Resolving dependencies...
+Downloading packages...
+Got dependencies!
+
+=== Native analyzer, default persistent cache, pass 1 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=1.637 user_seconds=2.050 system_seconds=1.018
+
+=== Native analyzer, default persistent cache, pass 2 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=1.118 user_seconds=1.682 system_seconds=0.430
+
+=== Native analyzer, default persistent cache, pass 3 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=1.701 user_seconds=2.302 system_seconds=0.882
+
+=== Native analyzer, isolated cache, pass 1 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=12.480 user_seconds=14.611 system_seconds=5.265
+
+=== Native analyzer, isolated cache, pass 2 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=0.668 user_seconds=0.567 system_seconds=0.177
+
+=== Native analyzer, isolated cache, pass 3 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=0.646 user_seconds=0.492 system_seconds=0.245
+
+=== Plugin bootstrap/AOT preparation (excluded from comparison) ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=127.459 user_seconds=148.017 system_seconds=21.017
+
+=== No-op semantic plugin, unchanged pass 1 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=77.578 user_seconds=98.296 system_seconds=11.954
+
+=== No-op semantic plugin, unchanged pass 2 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=81.642 user_seconds=103.341 system_seconds=11.494
+
+=== No-op semantic plugin, unchanged pass 3 ===
+Analyzing rohd-analyzer-plugin-cache-repro...
+No issues found!
+elapsed_seconds=12.215 user_seconds=22.762 system_seconds=4.963
+
+Benchmark complete. Results saved to /home/desmond/rohd.worktrees/rohd-analyzer-plugin-cache-repro/tool/analyzer_plugin_cache_repro/results/dart-3.14.0-211.1.beta-linux-rerun.txt

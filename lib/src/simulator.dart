@@ -433,7 +433,7 @@ abstract class Simulator {
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       try {
         await tick();
-      } catch (_, __) {
+      } catch (_) {
         // trigger the end of simulation if an error occurred
         _simulationEndedCompleter.complete();
 
