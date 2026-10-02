@@ -26,9 +26,11 @@ if [ -d "${folder_name}" ]; then
     echo "Failure: directory \"${folder_name}\" is not empty!"
     exit 1
   fi
-else
-  echo "Failure: directory \"${folder_name}\" not found!"
+elif [ -e "${folder_name}" ] || [ -L "${folder_name}" ]; then
+  echo "Failure: \"${folder_name}\" exists but is not a directory!"
   exit 1
+else
+  echo "Success: directory \"${folder_name}\" is absent!"
 fi
 
 # Make sure there are no VCD files in the root directory.
