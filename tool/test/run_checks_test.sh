@@ -28,7 +28,7 @@ printf '%s\n' '#!/bin/bash' 'printf "iverilog\n" >> "$CHECK_LOG"' \
   'exit "${IVERILOG_STATUS:-0}"' > "$FIXTURE/bin/which"
 printf '%s\n' '#!/bin/bash' 'printf "verilator\n" >> "$CHECK_LOG"' > "$FIXTURE/bin/verilator"
 chmod +x "$FIXTURE/bin/"*
-for step in install_dependencies verify_formatting analyze_source generate_documentation run_tests check_tmp_test; do
+for step in install_dependencies verify_formatting analyze_source generate_documentation run_tests cleanup_systemc_tmp check_tmp_test; do
   printf '%s\n' '#!/bin/bash' \
     'step="${0##*/}"' \
     'printf "%s\n" "$step" >> "$CHECK_LOG"' \
@@ -55,10 +55,10 @@ run_case() {
 
 readonly COMMON_STEPS=$'install_dependencies.sh\nverify_formatting.sh\nanalyze_source.sh\ngenerate_documentation.sh'
 run_case 0
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog\nverilator\nrun_tests.sh\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog\nverilator\nrun_tests.sh\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 
 run_case 0 --skip-tests
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 grep -Fq 'Skipping tests and simulator prerequisites' "$FIXTURE/output"
 
 export FAIL_STEP=run_tests.sh
@@ -70,7 +70,7 @@ unset FAIL_STEP
 rm "$FIXTURE/bin/verilator"
 export IVERILOG_STATUS=1 ROHD_REQUIRE_VERILATOR=1
 run_case 0 --skip-tests
-[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncheck_tmp_test.sh' ]]
+[[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\ncleanup_systemc_tmp.sh\ncheck_tmp_test.sh' ]]
 run_case 1
 [[ "$(cat "$CHECK_LOG")" == "$COMMON_STEPS"$'\niverilog' ]]
 unset IVERILOG_STATUS ROHD_REQUIRE_VERILATOR
