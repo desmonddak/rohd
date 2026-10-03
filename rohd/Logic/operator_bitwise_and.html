@@ -70,7 +70,13 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic operator &amp;(Logic other) =&gt; And2Gate(this, other).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic operator &amp;(Logic other) {
+  if (other is Const) {
+    return other &amp; this;
+  }
+
+  return And2Gate(this, other).out;
+}</code></pre>
 </section>
 
 
@@ -98,7 +104,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.9
+      0.6.11
   </span>
   
 </footer>
