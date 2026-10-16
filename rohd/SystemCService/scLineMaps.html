@@ -67,7 +67,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Map from module definition name to the list of <code>SystemCSynthesisResult</code>
+  <p>Map from generated implementation name to the
+<code>SystemCSynthesisResult</code>
 <code>scLineMap</code>s (signal/instance name → list of <code>'line:col'</code> positions).</p>
 </section>
 
@@ -75,8 +76,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Map&lt;String, Map&lt;String, List&lt;String&gt;&gt;&gt; get scLineMaps =&gt; {
-      for (final sr in _systemCResults)
-        sr.module.definitionName: sr.scLineMap,
+      for (final sr in _systemCResults) sr.instanceTypeName: sr.scLineMap,
     };</code></pre>
 </section>
 

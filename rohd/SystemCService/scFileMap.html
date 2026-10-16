@@ -67,9 +67,9 @@
     </section>
     
 <section class="desc markdown">
-  <p>Map from module definition name to the list of generated SC files
-for that module (typically one element today; future-proof for
-header + impl).</p>
+  <p>Map from generated implementation name to the list of generated SC
+files for that implementation (typically one element today;
+future-proof for header + impl).</p>
 </section>
 
     
@@ -78,11 +78,10 @@ header + impl).</p>
   <pre class="language-dart"><code class="language-dart">Map&lt;String, List&lt;String&gt;&gt; get scFileMap {
   final result = &lt;String, List&lt;String&gt;&gt;{};
   for (final sr in synthesisResults) {
-    final defName = sr.module.definitionName;
     final instanceName = sr.instanceTypeName;
     final fc = _fileContents.firstWhereOrNull((f) =&gt; f.name == instanceName);
     if (fc != null) {
-      result[defName] = [&#39;${fc.name}.sc&#39;];
+      result[instanceName] = [&#39;${fc.name}.sc&#39;];
     }
   }
   return result;
