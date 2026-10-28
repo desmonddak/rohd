@@ -10,6 +10,7 @@
 
 import 'dart:math';
 import 'package:benchmark_harness/benchmark_harness.dart';
+import 'package:meta/meta.dart' show protected;
 import 'package:rohd/rohd.dart';
 
 enum _MCUInterfaceTag { input, output }
@@ -107,6 +108,7 @@ class _MemoryControllerUnit extends Module {
   }
 
   late final _MCUInterface intf;
+  @protected
   late final List<Logic> memory;
 }
 

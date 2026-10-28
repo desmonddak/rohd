@@ -58,6 +58,8 @@ node_modules: package.json package-lock.json
 
 $(COMPILE_STAMP): $(TS_SOURCES) tsconfig.json package.json node_modules
 	@echo "Compiling TypeScript..."
+	@rm -rf out/
+	@mkdir -p out/
 	@npx tsc -p ./
 	@touch $(COMPILE_STAMP)
 

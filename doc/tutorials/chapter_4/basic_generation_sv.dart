@@ -42,7 +42,8 @@ class FullAdder extends Module {
 
 class NBitAdder extends Module {
   // Add Input and output port
-  final sum = <Logic>[];
+  late final List<Logic> _sum;
+  List<Logic> get sum => _sum;
   Logic carry = Const(0);
   Logic a;
   Logic b;
@@ -58,14 +59,15 @@ class NBitAdder extends Module {
 
     assert(a.width == b.width, 'a and b should have same width.');
 
+    _sum = <Logic>[];
     for (var i = 0; i < n; i++) {
       res = FullAdder(a: a[i], b: b[i], carryIn: carry);
 
       carry = res.fullAdderRes.cOut;
-      sum.add(res.fullAdderRes.sum);
+      _sum.add(addOutput('sum_$i', width: res.fullAdderRes.sum.width));
     }
 
-    sum.add(carry);
+    _sum.add(addOutput('sum_${_sum.length}', width: carry.width));
   }
 
   LogicValue get sumRes => sum.rswizzle().value;

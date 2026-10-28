@@ -157,31 +157,31 @@ class _AllNamingCases extends Module {
   // Exposed for test inspection.
   // Row 1 / Row 2: ports (accessed via mod.input / mod.output).
   // Row 5:
-  late final Logic reservedInternal;
+  Logic get reservedInternal => output('reservedInternal');
   // Row 6:
-  late final Logic reservedInternalUnpref;
+  Logic get reservedInternalUnpref => output('reservedInternalUnpref');
   // Row 9:
-  late final Logic renameableInternal;
+  Logic get renameableInternal => output('renameableInternal');
   // Row 10:
-  late final Logic renameableInternalUnpref;
+  Logic get renameableInternalUnpref => output('renameableInternalUnpref');
   // Row 15:
-  late final Logic mergeablePref;
+  Logic get mergeablePref => output('mergeablePref');
   // Row 15 collision partner:
-  late final Logic mergeablePrefCollide;
+  Logic get mergeablePrefCollide => output('mergeablePrefCollide');
   // Row 16:
-  late final Logic mergeableUnpref;
+  Logic get mergeableUnpref => output('mergeableUnpref');
   // Row 19:
-  late final Logic unnamed;
+  Logic get unnamed => output('unnamed');
   // Row 20:
   late final Logic constAllowed;
   // Row 21:
   late final Logic constDisallowed;
   // MG:
-  late final Logic mergeTarget;
+  Logic get mergeTarget => output('mergeTarget');
 
   // Structure/array elements (ST, AR):
-  late final LogicStructure structPort;
-  late final LogicArray arrayPort;
+  LogicStructure get structPort => inputSource('stIn') as LogicStructure;
+  LogicArray get arrayPort => inputSource('arIn') as LogicArray;
 
   _AllNamingCases() : super(name: 'allcases') {
     // ── Row 1: reserved + this-port + preferred ──────────────────
@@ -202,38 +202,66 @@ class _AllNamingCases extends Module {
     final mPortUnpref = addInput('_muprt', Logic(width: 8), width: 8);
 
     // ── Row 5: reserved + internal + preferred ───────────────────
-    reservedInternal = Logic(name: 'resv', width: 8, naming: Naming.reserved)
-      ..gets(inp ^ Const(0x01, width: 8));
+    addOutput('reservedInternal',
+            width: (Logic(name: 'resv', width: 8, naming: Naming.reserved)
+                  ..gets(inp ^ Const(0x01, width: 8)))
+                .width) <=
+        (Logic(name: 'resv', width: 8, naming: Naming.reserved)
+          ..gets(inp ^ Const(0x01, width: 8)));
 
     // ── Row 6: reserved + internal + unpreferred ─────────────────
-    reservedInternalUnpref =
-        Logic(name: '_resvu', width: 8, naming: Naming.reserved)
-          ..gets(inp ^ Const(0x02, width: 8));
+    addOutput('reservedInternalUnpref',
+            width: (Logic(name: '_resvu', width: 8, naming: Naming.reserved)
+                  ..gets(inp ^ Const(0x02, width: 8)))
+                .width) <=
+        (Logic(name: '_resvu', width: 8, naming: Naming.reserved)
+          ..gets(inp ^ Const(0x02, width: 8)));
 
     // ── Row 9: renameable + internal + preferred ─────────────────
-    renameableInternal = Logic(name: 'ren', width: 8, naming: Naming.renameable)
-      ..gets(inp ^ Const(0x03, width: 8));
+    addOutput('renameableInternal',
+            width: (Logic(name: 'ren', width: 8, naming: Naming.renameable)
+                  ..gets(inp ^ Const(0x03, width: 8)))
+                .width) <=
+        (Logic(name: 'ren', width: 8, naming: Naming.renameable)
+          ..gets(inp ^ Const(0x03, width: 8)));
 
     // ── Row 10: renameable + internal + unpreferred ──────────────
-    renameableInternalUnpref =
-        Logic(name: '_renu', width: 8, naming: Naming.renameable)
-          ..gets(inp ^ Const(0x04, width: 8));
+    addOutput('renameableInternalUnpref',
+            width: (Logic(name: '_renu', width: 8, naming: Naming.renameable)
+                  ..gets(inp ^ Const(0x04, width: 8)))
+                .width) <=
+        (Logic(name: '_renu', width: 8, naming: Naming.renameable)
+          ..gets(inp ^ Const(0x04, width: 8)));
 
     // ── Row 15: mergeable + internal + preferred ─────────────────
-    mergeablePref = Logic(name: 'mname', width: 8, naming: Naming.mergeable)
-      ..gets(inp ^ Const(0x05, width: 8));
+    addOutput('mergeablePref',
+            width: (Logic(name: 'mname', width: 8, naming: Naming.mergeable)
+                  ..gets(inp ^ Const(0x05, width: 8)))
+                .width) <=
+        (Logic(name: 'mname', width: 8, naming: Naming.mergeable)
+          ..gets(inp ^ Const(0x05, width: 8)));
 
     // ── COL: collision partner — same base name 'mname' ──────────
-    mergeablePrefCollide =
-        Logic(name: 'mname', width: 8, naming: Naming.mergeable)
-          ..gets(inp ^ Const(0x06, width: 8));
+    addOutput('mergeablePrefCollide',
+            width: (Logic(name: 'mname', width: 8, naming: Naming.mergeable)
+                  ..gets(inp ^ Const(0x06, width: 8)))
+                .width) <=
+        (Logic(name: 'mname', width: 8, naming: Naming.mergeable)
+          ..gets(inp ^ Const(0x06, width: 8)));
 
     // ── Row 16: mergeable + internal + unpreferred ───────────────
-    mergeableUnpref = Logic(name: '_hidden', width: 8, naming: Naming.mergeable)
-      ..gets(inp ^ Const(0x07, width: 8));
+    addOutput('mergeableUnpref',
+            width: (Logic(name: '_hidden', width: 8, naming: Naming.mergeable)
+                  ..gets(inp ^ Const(0x07, width: 8)))
+                .width) <=
+        (Logic(name: '_hidden', width: 8, naming: Naming.mergeable)
+          ..gets(inp ^ Const(0x07, width: 8)));
 
     // ── Row 19: unnamed + internal ───────────────────────────────
-    unnamed = Logic(width: 8)..gets(inp ^ Const(0x08, width: 8));
+    addOutput('unnamed',
+            width:
+                (Logic(width: 8)..gets(inp ^ Const(0x08, width: 8))).width) <=
+        (Logic(width: 8)..gets(inp ^ Const(0x08, width: 8)));
 
     // ── Rows 3/13: sub-port preferred (via _SimpleSub.x / .y) ───
     // ── Row 4/14: sub-port unpreferred (via _UnprefSub._uport) ──
@@ -244,8 +272,12 @@ class _AllNamingCases extends Module {
     final unpSub = _UnprefSub(inp ^ Const(0x0a, width: 8));
 
     // ── MG: merge behavior — mergeTarget merges with subOut ──────
-    mergeTarget = Logic(name: 'mmerge', width: 8, naming: Naming.mergeable)
-      ..gets(subOut);
+    addOutput('mergeTarget',
+            width: (Logic(name: 'mmerge', width: 8, naming: Naming.mergeable)
+                  ..gets(subOut))
+                .width) <=
+        (Logic(name: 'mmerge', width: 8, naming: Naming.mergeable)
+          ..gets(subOut));
 
     // ── Row 20: constant with name allowed ───────────────────────
     constAllowed =
@@ -257,11 +289,11 @@ class _AllNamingCases extends Module {
     _ExpressionlessSub(constDisallowed, inp);
 
     // ── ST: structure element (structureName = "parent.field") ────
-    structPort = _SimpleStruct();
+    final structPort = _SimpleStruct();
     addInput('stIn', structPort, width: structPort.width);
 
     // ── AR: array element (isArrayMember, uses logic.name) ───────
-    arrayPort = LogicArray([3], 8, name: 'arIn');
+    final arrayPort = LogicArray([3], 8, name: 'arIn');
     addInputArray('arIn', arrayPort, dimensions: [3], elementWidth: 8);
 
     // Drive output to use all signals (prevents pruning).

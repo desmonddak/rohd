@@ -18,10 +18,10 @@ class FlyingOutputModule extends Module {
 }
 
 class BadSubModuleOut extends Module {
-  final Logic y = Logic(name: 'y'); // bad
+  Logic get y => output('y'); // bad
   BadSubModuleOut(Logic a) : super(name: 'badsubmoduleout') {
     a = addInput('a', a); // good
-    y <= a;
+    addOutput('y', width: a.width) <= a;
   }
 }
 

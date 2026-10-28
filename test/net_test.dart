@@ -332,11 +332,11 @@ class ModArrToNetTop extends Module {
 }
 
 class ModArrToNetSub extends Module {
-  late final LogicNet banana;
+  LogicNet get banana => inOutSource('banana') as LogicNet;
   ModArrToNetSub(LogicArray apple) {
     apple = addInOutArray('apple', apple, dimensions: [2], elementWidth: 8);
 
-    banana = LogicNet(name: 'banana', width: 8, naming: Naming.mergeable);
+    final banana = LogicNet(name: 'banana', width: 8, naming: Naming.mergeable);
     addInOut('banana', banana, width: 8) <= apple.elements[0];
   }
 }

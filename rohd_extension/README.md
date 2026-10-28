@@ -1,7 +1,7 @@
 # ROHD VS Code Extension
 
 A VS Code extension for the [ROHD](https://github.com/intel/rohd) hardware
-design framework.  It provides context-aware Dart code snippets, cross-probe
+design framework. It provides context-aware Dart code snippets, cross-probe
 source navigation from ROHD viewers (schematic, waveform), and automatic
 port-forwarded URI display for the Dart Tooling Daemon (DTD) and VM Service.
 
@@ -21,12 +21,14 @@ port-forwarded URI display for the Dart Tooling Daemon (DTD) and VM Service.
 - **DTD bridge** — registers `rohd.goToSource` / `rohd.resolveFrames`
   services on the Dart Tooling Daemon so the DevTools extension can navigate
   the editor remotely.
-
+- **ROHD linting** — integrates with the ROHD Dart analyzer plugin to report
+  provable ROHD syntax and semantic problems in the VS Code Problems view,
+  including port ownership, signal assignment, and SSA checks.
 On activation the extension prints:
 
 ```text
 ════════════════════════════════════════════════════════════
-ROHD 0.1.0:  Extension loaded for FLC crossprobing.
+ROHD 0.1.15:  Extension loaded for FLC crossprobing.
 
 DTD:
   URI: ws://127.0.0.1:44123/token
@@ -71,6 +73,65 @@ enable it manually in Settings or add this to `settings.json`:
   "rohd.enableCompletions": true
 }
 ```
+
+Static ROHD diagnostics, including hierarchy ownership and `Const` mutation
+rules, are provided by the
+[`rohd_analyzer_plugin`](https://github.com/intel/rohd/blob/main/packages/rohd_analyzer_plugin/README.md). Configure
+that plugin in your workspace's `analysis_options.yaml` to receive the same
+diagnostics in both `dart analyze` and VS Code's Problems view.
+
+### ROHD Dart analyzer plugin
+
+The extension complements, but does not replace, the
+[`rohd_analyzer_plugin`](https://github.com/intel/rohd/blob/main/packages/rohd_analyzer_plugin/README.md). The Dart
+plugin performs resolved, source-level checks for ROHD syntax and semantics
+through the Dart Analysis Server, so the diagnostics are available in
+`dart analyze`, the VS Code Problems view, and other Dart tooling.
+
+Enable it in the application's top-level `analysis_options.yaml`:
+
+```yaml
+plugins:
+  rohd_analyzer_plugin:
+    path: ../rohd_analyzer_plugin
+```
+
+Current checks include:
+
+- **Port declarations and hierarchy ownership** — public hardware members must
+  be backed by a port registered on the current module through an appropriate
+  `addInput`, `addOutput`, or interface registration.
+- **Const mutation safety** — detects `inject` and `put` calls on values proven
+  to originate from a ROHD `Const`, including straightforward aliases and
+  const-only lists.
+- **SSA read-before-write checks** — detects direct reads of a signal in
+  `Combinational.ssa` before the signal has been assigned. This is the
+  `ROHD-S002` check; it is deliberately limited to direct `s(signal)` calls in
+  the callback and does not model arbitrary helper methods or control flow.
+- **Conservative Quick Fixes** — for provable public `late final Logic` output
+  fields, the analyzer can convert the field to a registered output getter.
+
+The plugin intentionally reports only problems that can be proven from resolved
+Dart elements and local source relationships. Ambiguous fields and usages are
+left unreported to avoid false positives.
+
+The SSA check is separate from ROHD's runtime write-after-read protection for
+ordinary `Combinational` blocks. The analyzer plugin does not report a general
+write-after-read rule for regular `Combinational` code.
+
+For live Problems-panel diagnostics, the Dart Analysis Server must be able to
+find the package and must be restarted after changing the top-level
+`plugins` section. In VS Code, run **Dart: Restart Analysis Server** after
+adding or changing the plugin configuration. A VS Code window reload may also
+be needed after installing a new extension, but reinstalling the extension
+does not by itself restart the Dart Analysis Server. Running `dart analyze`
+is a useful verification step, but it is not required for the plugin to report
+diagnostics in the editor.
+
+If both `ROHD-H001` and `rohd_hierarchy/non_port_public_hardware` appear for
+the same source location, an older ROHD extension is still active alongside
+the analyzer plugin. Uninstall older `rohd.rohd` versions, install the current
+VSIX, and reload the VS Code window.
 
 After changing extension settings or installing a new VSIX, reload the VS Code
 window with **Developer: Reload Window**.
@@ -258,12 +319,12 @@ cd rohd_extension
 npm run package
 ```
 
-This produces `rohd-0.1.0.vsix`.
+This produces `rohd-0.1.15.vsix`.
 
 ### Install
 
 ```bash
-code --install-extension rohd-0.1.0.vsix --force
+code --install-extension rohd-0.1.15.vsix --force
 ```
 
 Then reload the VS Code window (**Developer: Reload Window**).
@@ -274,7 +335,7 @@ Then reload the VS Code window (**Developer: Reload Window**).
 cd rohd_extension \
   && npm ci \
   && npm run package \
-  && code --install-extension rohd-0.1.0.vsix --force \
+  && code --install-extension rohd-0.1.15.vsix --force \
   && echo "Done — reload the VS Code window to activate."
 ```
 
@@ -290,7 +351,7 @@ Place the extension source in your repo and build it on container creation:
 ```jsonc
 // .devcontainer/devcontainer.json
 {
-  "postCreateCommand": "cd rohd_extension && npm ci && npm run package && code --install-extension rohd-0.1.0.vsix --force"
+  "postCreateCommand": "cd rohd_extension && npm ci && npm run package && code --install-extension rohd-0.1.15.vsix --force"
 }
 ```
 
@@ -300,14 +361,14 @@ Build the `.vsix` on your host or in CI, then install at container start:
 
 ```jsonc
 {
-  "postStartCommand": "code --install-extension rohd_extension/rohd-0.1.0.vsix --force"
+  "postStartCommand": "code --install-extension rohd_extension/rohd-0.1.15.vsix --force"
 }
 ```
 
 ### Option 3: Install via CLI while connected
 
 ```bash
-code --install-extension rohd-0.1.0.vsix --force
+code --install-extension rohd-0.1.15.vsix --force
 ```
 
 The `code` CLI inside a remote session targets the VS Code Server
@@ -325,9 +386,9 @@ automatically.
 If the `code` CLI is not available (e.g. in a Dockerfile `RUN` step):
 
 ```bash
-mkdir -p ~/.vscode-server/extensions/rohd.rohd-0.1.0
+mkdir -p ~/.vscode-server/extensions/rohd.rohd-0.1.15
 cp -r rohd_extension/{package.json,out,snippets,resources} \
-  ~/.vscode-server/extensions/rohd.rohd-0.1.0/
+  ~/.vscode-server/extensions/rohd.rohd-0.1.12/
 ```
 
 The directory name must follow the pattern `<publisher>.<name>-<version>`.

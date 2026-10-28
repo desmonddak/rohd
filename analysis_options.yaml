@@ -1,6 +1,10 @@
 # Lints set up with some guidance from here:
 # https://rydmike.com/blog_flutter_linting.html
 
+plugins:
+  rohd_analyzer_plugin:
+    path: packages/rohd_analyzer_plugin
+
 analyzer:
   language:
     strict-casts: true

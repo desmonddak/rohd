@@ -26,8 +26,8 @@ class TriStateBuffer extends Module with SystemVerilog {
   /// The control signal for this [TriStateBuffer].
   late final Logic _enable = input(_enableName);
 
-  /// The output of this gate (width is always 1).
-  late final LogicNet out;
+  ///
+  LogicNet get out => inOutSource(_outName) as LogicNet;
 
   /// An internal signal for the modelling logic to drive.
   final Logic _outDriver;
@@ -43,7 +43,7 @@ class TriStateBuffer extends Module with SystemVerilog {
     addInput(_inName, in_, width: in_.width);
     addInput(_enableName, enable);
 
-    out = LogicNet(width: in_.width);
+    final out = LogicNet(width: in_.width);
     addInOut(_outName, out, width: in_.width) <= _outDriver;
 
     _setup();

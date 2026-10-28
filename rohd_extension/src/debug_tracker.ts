@@ -150,7 +150,7 @@ function watchDtdFromDartExtension(context: vscode.ExtensionContext): void {
 // Banner output
 // ---------------------------------------------------------------------------
 
-const EXTENSION_VERSION = '0.1.0';
+const EXTENSION_VERSION = '0.1.15';
 
 async function printSessionBanner(
   session: vscode.DebugSession,

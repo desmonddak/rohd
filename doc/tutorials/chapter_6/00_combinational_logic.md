@@ -57,6 +57,38 @@ Combinational([
 ]);
 ```
 
+### SSA combinational blocks
+
+Use `Combinational.ssa` when the combinational procedure should be written in
+static single-assignment form. The callback receives `s`, a function that
+remaps a signal occurrence into the SSA form used by that block. Every signal
+must be assigned through `s(signal)` before a later expression reads
+`s(signal)`:
+
+```dart
+// Correct: acc is initialized before it is read.
+Combinational.ssa((s) => [
+  s(acc) < input,
+  s(out) < s(acc),
+]);
+```
+
+This ordering is invalid and is reported by the ROHD analyzer plugin as
+`ROHD-S002` (`rohd_signals/ssa_read_before_write`):
+
+```dart
+Combinational.ssa((s) => [
+  s(out) < s(acc), // acc has not been initialized yet.
+  s(acc) < input,
+]);
+```
+
+`ROHD-S002` checks direct `s(signal)` reads and writes in an inline
+`Combinational.ssa` callback. It is intentionally conservative and does not
+infer arbitrary helper-method or control-flow behavior. This analyzer rule is
+separate from ROHD's runtime `WriteAfterReadException`, which protects
+ordinary `Combinational` blocks from read-then-later-write behavior.
+
 The most important part that you have to notice here is the assignment operator in `Combinational` Block is different from common dart operator. So, a few operators that being use commonly are:
 
 - `.eq()` function map to `==`

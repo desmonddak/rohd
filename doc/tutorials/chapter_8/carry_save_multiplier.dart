@@ -5,14 +5,14 @@ import '../chapter_5/n_bit_adder.dart';
 
 class CarrySaveMultiplier extends Module {
   // Add Input and output port for FA sum and Carry
-  final List<Logic> sum =
-      List.generate(8, (index) => Logic(name: 'sum_$index'));
-  final List<Logic> carry =
-      List.generate(8, (index) => Logic(name: 'carry_$index'));
+  List<Logic> get sum => List.generate(8, (index) => output('sum_$index'));
+  List<Logic> get carry => List.generate(8, (index) => output('carry_$index'));
 
   late final Pipeline pipeline;
   CarrySaveMultiplier(Logic valA, Logic valB, Logic clk, Logic reset,
       {super.name = 'carry_save_multiplier'}) {
+    final carry = List.generate(8, (index) => addOutput('carry_$index'));
+    final sum = List.generate(8, (index) => addOutput('sum_$index'));
     // Declare Input Node
     valA = addInput('a', valA, width: valA.width);
     valB = addInput('b', valB, width: valB.width);

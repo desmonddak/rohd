@@ -1,0 +1,66 @@
+# Canonical ROHD analyzer rule registry.
+#
+# Implementations in the VS Code extension and Dart analyzer plugin must use
+# the stable id for the same conceptual rule.
+rules:
+  - id: ROHD-H001
+    slug: non_port_public_hardware
+    category: hierarchy
+    vscodeCode: ROHD-H001
+    analyzerName: rohd_hierarchy/non_port_public_hardware
+    defaultSeverity: warning
+    summary: >
+      Public hardware member is not backed by a port owned by this module.
+    hardwareTypeRoots:
+      - Logic
+      - LogicArray
+      - LogicStructure
+      - Interface
+    legalExposureMethods:
+      - addInOut
+      - addInOutArray
+      - addInput
+      - addInputArray
+      - addInterface
+      - addInterfacePorts
+      - addOutput
+      - addOutputArray
+      - addPairInterface
+      - addPairInterfaceFrom
+      - addPairInterfacePorts
+      - addTypedInOut
+      - addTypedInput
+      - addTypedOutput
+      - inOut
+      - inOutSource
+      - input
+      - inputSource
+      - output
+      - tryInOut
+      - tryInput
+      - tryOutput
+    workspaceExcludes:
+      - '**/.dart_tool/**'
+      - '**/build/**'
+      - '**/node_modules/**'
+      - '**/generated/**'
+      - '**/.*_local/**'
+  - id: ROHD-S001
+    slug: avoid_mutating_const
+    category: signals
+    vscodeCode: ROHD-S001
+    analyzerName: rohd_signals/avoid_mutating_const
+    defaultSeverity: warning
+    summary: >
+      A ROHD Const cannot be mutated with inject or put.
+    mutationMethods:
+      - inject
+      - put
+  - id: ROHD-S002
+    slug: ssa_read_before_write
+    category: signals
+    vscodeCode: ROHD-S002
+    analyzerName: rohd_signals/ssa_read_before_write
+    defaultSeverity: warning
+    summary: >
+      An SSA signal may be read before it is initialized.

@@ -110,9 +110,11 @@ class TestBench extends Module {
   Logic get sout => output('sout');
 
   final spiInterface = SPIInterface();
-  final Logic clk = SimpleClockGenerator(10).clk;
+  Logic get clk => output('clk');
 
   TestBench(Logic reset, Logic sin) {
+    final clk = addOutput('clk');
+    clk <= SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
     sin = addInput('sin', sin);
 

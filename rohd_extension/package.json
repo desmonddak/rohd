@@ -1,8 +1,8 @@
 {
   "name": "rohd",
   "displayName": "ROHD",
-  "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
-  "version": "0.1.0",
+  "description": "Snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
+  "version": "0.1.15",
   "publisher": "rohd",
   "license": "BSD-3-Clause",
   "repository": {
@@ -31,6 +31,7 @@
     "onCommand:rohd.sendSignals",
     "onDebugResolve:dart",
     "onDebug:dart",
+    "onLanguage:dart",
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
@@ -86,6 +87,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "test": "npm run compile",
     "watch": "tsc -watch -p ./",
     "package": "vsce package --allow-missing-repository"
   },

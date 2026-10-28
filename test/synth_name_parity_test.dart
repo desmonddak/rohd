@@ -51,16 +51,18 @@ class _Counter extends Module {
 }
 
 class _CollidingNames extends Module {
-  late final Logic firstDup;
-  late final Logic secondDup;
+  Logic get firstDup => output('firstDup');
+  Logic get secondDup => output('secondDup');
 
   _CollidingNames(Logic a, Logic b) : super(name: 'collidingNames') {
     a = addInput('a', a);
     b = addInput('b', b);
     final y = addOutput('y');
 
-    firstDup = Logic(name: 'dup');
-    secondDup = Logic(name: 'dup');
+    addOutput('firstDup', width: Logic(name: 'dup').width) <=
+        Logic(name: 'dup');
+    addOutput('secondDup', width: Logic(name: 'dup').width) <=
+        Logic(name: 'dup');
 
     firstDup <= a & b;
     secondDup <= a | b;
@@ -69,8 +71,8 @@ class _CollidingNames extends Module {
 }
 
 class _PartiallyInlineCollidingNames extends Module {
-  late final Logic inlinedDup;
-  late final Logic retainedDup;
+  Logic get inlinedDup => output('inlinedDup');
+  Logic get retainedDup => output('retainedDup');
 
   _PartiallyInlineCollidingNames(Logic a, Logic b)
       : super(name: 'partiallyInlineCollidingNames') {
@@ -79,8 +81,10 @@ class _PartiallyInlineCollidingNames extends Module {
     final y = addOutput('y');
     final z = addOutput('z');
 
-    inlinedDup = Logic(name: 'dup');
-    retainedDup = Logic(name: 'dup');
+    addOutput('inlinedDup', width: Logic(name: 'dup').width) <=
+        Logic(name: 'dup');
+    addOutput('retainedDup', width: Logic(name: 'dup').width) <=
+        Logic(name: 'dup');
 
     inlinedDup <= a & b;
     retainedDup <= a | b;
@@ -90,7 +94,7 @@ class _PartiallyInlineCollidingNames extends Module {
 }
 
 class _CollapsedInstanceCollidingNames extends Module {
-  late final Logic retainedDup;
+  Logic get retainedDup => output('retainedDup');
 
   _CollapsedInstanceCollidingNames(Logic a, Logic b)
       : super(name: 'collapsedInstanceCollidingNames') {
@@ -100,7 +104,8 @@ class _CollapsedInstanceCollidingNames extends Module {
     final z = addOutput('z');
 
     final collapsedInstanceOut = And2Gate(a, b, name: 'dup').out;
-    retainedDup = Logic(name: 'dup');
+    addOutput('retainedDup', width: Logic(name: 'dup').width) <=
+        Logic(name: 'dup');
 
     retainedDup <= a | b;
     y <= collapsedInstanceOut ^ retainedDup;

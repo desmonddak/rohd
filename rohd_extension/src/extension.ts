@@ -22,7 +22,7 @@ import * as flcService from './flc_service';
 import * as signalViewerRegistry from './signal_viewer_registry';
 
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('ROHD extension is now active (v0.1.0)');
+  console.log('ROHD extension is now active (v0.1.15)');
 
   // Initialise the FLC service with the extension path so it can locate
   // the compiled flc_lookup binary.
