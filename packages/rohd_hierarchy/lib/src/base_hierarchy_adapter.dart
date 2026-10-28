@@ -59,7 +59,8 @@ abstract class BaseHierarchyAdapter with HierarchyService {
   HierarchyOccurrence get root {
     if (_root == null) {
       throw StateError(
-          'Root occurrence not set. Call setRoot() during initialization.');
+        'Root occurrence not set. Call setRoot() during initialization.',
+      );
     }
     return _root!;
   }

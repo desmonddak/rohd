@@ -46,30 +46,30 @@ import 'package:test/test.dart';
 /// ```
 HierarchyService buildTestHierarchy() {
   HierarchyOccurrence mkAlu() => HierarchyOccurrence(
-        name: 'alu',
-        definition: 'ALU',
-        signals: [
-          SignalOccurrence(name: 'a', width: 8),
-          SignalOccurrence(name: 'b', width: 8),
-          SignalOccurrence(name: 'result', width: 8),
-          SignalOccurrence(name: 'carry_out', width: 1),
-          SignalOccurrence(name: 'overflow', width: 1),
-        ],
-      );
+    name: 'alu',
+    definition: 'ALU',
+    signals: [
+      SignalOccurrence(name: 'a', width: 8),
+      SignalOccurrence(name: 'b', width: 8),
+      SignalOccurrence(name: 'result', width: 8),
+      SignalOccurrence(name: 'carry_out', width: 1),
+      SignalOccurrence(name: 'overflow', width: 1),
+    ],
+  );
 
   HierarchyOccurrence mkRegfile() => HierarchyOccurrence(
-        name: 'regfile',
-        definition: 'RegFile',
-        signals: [
-          SignalOccurrence(name: 'clk', width: 1),
-          SignalOccurrence(name: 'reset', width: 1),
-          SignalOccurrence(name: 'd0', width: 8),
-          SignalOccurrence(name: 'd1', width: 8),
-          SignalOccurrence(name: 'd2', width: 8),
-          SignalOccurrence(name: 'd15', width: 8),
-          SignalOccurrence(name: 'wr_en', width: 1),
-        ],
-      );
+    name: 'regfile',
+    definition: 'RegFile',
+    signals: [
+      SignalOccurrence(name: 'clk', width: 1),
+      SignalOccurrence(name: 'reset', width: 1),
+      SignalOccurrence(name: 'd0', width: 8),
+      SignalOccurrence(name: 'd1', width: 8),
+      SignalOccurrence(name: 'd2', width: 8),
+      SignalOccurrence(name: 'd15', width: 8),
+      SignalOccurrence(name: 'wr_en', width: 1),
+    ],
+  );
 
   final decoder = HierarchyOccurrence(
     name: 'decoder',
@@ -104,16 +104,16 @@ HierarchyService buildTestHierarchy() {
   );
 
   HierarchyOccurrence mkCacheChannel(String name) => HierarchyOccurrence(
-        name: name,
-        definition: 'CacheChannel',
-        signals: [
-          SignalOccurrence(name: 'clk', width: 1),
-          SignalOccurrence(name: 'addr', width: 16),
-          SignalOccurrence(name: 'data', width: 32),
-          SignalOccurrence(name: 'hit', width: 1),
-          SignalOccurrence(name: 'miss', width: 1),
-        ],
-      );
+    name: name,
+    definition: 'CacheChannel',
+    signals: [
+      SignalOccurrence(name: 'clk', width: 1),
+      SignalOccurrence(name: 'addr', width: 16),
+      SignalOccurrence(name: 'data', width: 32),
+      SignalOccurrence(name: 'hit', width: 1),
+      SignalOccurrence(name: 'miss', width: 1),
+    ],
+  );
 
   final memCtrl = HierarchyOccurrence(
     name: 'mem_ctrl',
@@ -121,7 +121,7 @@ HierarchyService buildTestHierarchy() {
     children: [
       mkCacheChannel('ch0'),
       mkCacheChannel('ch1'),
-      mkCacheChannel('ch2')
+      mkCacheChannel('ch2'),
     ],
     signals: [
       SignalOccurrence(name: 'clk', width: 1),
@@ -134,15 +134,15 @@ HierarchyService buildTestHierarchy() {
   );
 
   HierarchyOccurrence mkUart(String name) => HierarchyOccurrence(
-        name: name,
-        definition: 'UART',
-        signals: [
-          SignalOccurrence(name: 'clk', width: 1),
-          SignalOccurrence(name: 'tx', width: 1),
-          SignalOccurrence(name: 'rx', width: 1),
-          SignalOccurrence(name: 'baud_sel', width: 3),
-        ],
-      );
+    name: name,
+    definition: 'UART',
+    signals: [
+      SignalOccurrence(name: 'clk', width: 1),
+      SignalOccurrence(name: 'tx', width: 1),
+      SignalOccurrence(name: 'rx', width: 1),
+      SignalOccurrence(name: 'baud_sel', width: 3),
+    ],
+  );
 
   final ioMux = HierarchyOccurrence(
     name: 'io_mux',
@@ -618,12 +618,13 @@ void main() {
       final paths = svc.searchOccurrencePathsRegex('SoC/mem_ctrl/ch[0-2]');
       expect(paths.length, equals(3));
       expect(
-          paths,
-          containsAll([
-            'SoC/mem_ctrl/ch0',
-            'SoC/mem_ctrl/ch1',
-            'SoC/mem_ctrl/ch2',
-          ]));
+        paths,
+        containsAll([
+          'SoC/mem_ctrl/ch0',
+          'SoC/mem_ctrl/ch1',
+          'SoC/mem_ctrl/ch2',
+        ]),
+      );
     });
 
     test('RegexQuery *_mux matches occurrence by suffix', () {

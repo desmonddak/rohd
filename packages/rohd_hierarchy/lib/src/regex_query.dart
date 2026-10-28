@@ -171,7 +171,5 @@ class RegexSegment {
   RegexSegment(this.regex) : isGlobStar = false;
 
   /// Create a glob-star segment (`**`).
-  RegexSegment.globStar()
-      : regex = null,
-        isGlobStar = true;
+  RegexSegment.globStar() : regex = null, isGlobStar = true;
 }

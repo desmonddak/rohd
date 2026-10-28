@@ -125,27 +125,30 @@ void main() {
       expect(results.length, 1);
     });
 
-    test('dot in regex pattern is treated as regex metachar, not separator',
-        () {
-      // In regex mode, `.` is NOT a hierarchy separator — only `/` is.
-      // `Top.CPU` is a single segment meaning "Top" + any char + "CPU".
-      final results = hierarchy.searchSignalPathsRegex('Top.CPU.ALU.result');
-      // No match because the hierarchy root is "Top", not "Top.CPU.ALU"
-      expect(results, isEmpty);
-    });
+    test(
+      'dot in regex pattern is treated as regex metachar, not separator',
+      () {
+        // In regex mode, `.` is NOT a hierarchy separator — only `/` is.
+        // `Top.CPU` is a single segment meaning "Top" + any char + "CPU".
+        final results = hierarchy.searchSignalPathsRegex('Top.CPU.ALU.result');
+        // No match because the hierarchy root is "Top", not "Top.CPU.ALU"
+        expect(results, isEmpty);
+      },
+    );
 
     // ── Wildcard at one level ──
 
     test('.* matches all signals in a module', () {
       final results = hierarchy.searchSignalPathsRegex('Top/CPU/ALU/.*');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/ALU/a',
-            'Top/CPU/ALU/b',
-            'Top/CPU/ALU/result',
-            'Top/CPU/ALU/carry_out',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/ALU/a',
+          'Top/CPU/ALU/b',
+          'Top/CPU/ALU/result',
+          'Top/CPU/ALU/carry_out',
+        ]),
+      );
       expect(results.length, 4);
     });
 
@@ -173,13 +176,14 @@ void main() {
     test('** matches signals at any depth', () {
       final results = hierarchy.searchSignalPathsRegex('Top/**/clk');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/RegFile/clk',
-            'Top/Memory/Cache/clk',
-            'Top/Memory/DRAM/clk',
-            'Top/IO/UART/clk',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/RegFile/clk',
+          'Top/Memory/Cache/clk',
+          'Top/Memory/DRAM/clk',
+          'Top/IO/UART/clk',
+        ]),
+      );
       // Top's own clk is also accessible through ** matching zero levels
       expect(results, contains('Top/clk'));
     });
@@ -189,14 +193,15 @@ void main() {
       // All clk signals anywhere
       expect(results.length, greaterThanOrEqualTo(5));
       expect(
-          results,
-          containsAll([
-            'Top/clk',
-            'Top/CPU/RegFile/clk',
-            'Top/Memory/Cache/clk',
-            'Top/Memory/DRAM/clk',
-            'Top/IO/UART/clk',
-          ]));
+        results,
+        containsAll([
+          'Top/clk',
+          'Top/CPU/RegFile/clk',
+          'Top/Memory/Cache/clk',
+          'Top/Memory/DRAM/clk',
+          'Top/IO/UART/clk',
+        ]),
+      );
     });
 
     test('** between levels matches across boundaries', () {
@@ -208,28 +213,31 @@ void main() {
     test('** with regex signal pattern', () {
       final results = hierarchy.searchSignalPathsRegex('Top/**/d[0-9]+');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/RegFile/d0',
-            'Top/CPU/RegFile/d1',
-            'Top/CPU/RegFile/d2',
-            'Top/CPU/RegFile/d15',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/RegFile/d0',
+          'Top/CPU/RegFile/d1',
+          'Top/CPU/RegFile/d2',
+          'Top/CPU/RegFile/d15',
+        ]),
+      );
       expect(results.length, 4);
     });
 
     // ── Regex character classes ──
 
     test('character class in signal name', () {
-      final results =
-          hierarchy.searchSignalPathsRegex('Top/CPU/RegFile/d[0-2]');
+      final results = hierarchy.searchSignalPathsRegex(
+        'Top/CPU/RegFile/d[0-2]',
+      );
       expect(
-          results,
-          containsAll([
-            'Top/CPU/RegFile/d0',
-            'Top/CPU/RegFile/d1',
-            'Top/CPU/RegFile/d2',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/RegFile/d0',
+          'Top/CPU/RegFile/d1',
+          'Top/CPU/RegFile/d2',
+        ]),
+      );
       expect(results, isNot(contains('Top/CPU/RegFile/d15')));
     });
 
@@ -238,27 +246,29 @@ void main() {
     test('alternation in signal name', () {
       final results = hierarchy.searchSignalPathsRegex('Top/**/(?:clk|reset)');
       expect(
-          results,
-          containsAll([
-            'Top/clk',
-            'Top/reset',
-            'Top/CPU/RegFile/clk',
-            'Top/CPU/RegFile/reset',
-            'Top/Memory/Cache/clk',
-            'Top/Memory/DRAM/clk',
-            'Top/IO/UART/clk',
-          ]));
+        results,
+        containsAll([
+          'Top/clk',
+          'Top/reset',
+          'Top/CPU/RegFile/clk',
+          'Top/CPU/RegFile/reset',
+          'Top/Memory/Cache/clk',
+          'Top/Memory/DRAM/clk',
+          'Top/IO/UART/clk',
+        ]),
+      );
       expect(results.length, 7);
     });
 
     test('alternation in module name', () {
       final results = hierarchy.searchSignalPathsRegex('Top/(CPU|IO)/.*/clk');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/RegFile/clk',
-            'Top/IO/UART/clk',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/RegFile/clk',
+          'Top/IO/UART/clk',
+        ]),
+      );
     });
 
     // ── Module search ──
@@ -266,12 +276,13 @@ void main() {
     test('searchOccurrencePathsRegex finds modules', () {
       final results = hierarchy.searchOccurrencePathsRegex('Top/CPU/.*');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/ALU',
-            'Top/CPU/Decoder',
-            'Top/CPU/RegFile',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/ALU',
+          'Top/CPU/Decoder',
+          'Top/CPU/RegFile',
+        ]),
+      );
     });
 
     test('searchOccurrencePathsRegex with **', () {
@@ -291,14 +302,16 @@ void main() {
       expect(results.first.signal!.name, 'result');
     });
 
-    test('searchSignalsRegex returns results with SignalOccurrence objects',
-        () {
-      final results = hierarchy.searchSignalsRegex('Top/**/carry_out');
-      expect(results.length, 1);
-      expect(results.first.signal, isNotNull);
-      expect(results.first.signal!.name, 'carry_out');
-      expect(results.first.signal!.width, 1);
-    });
+    test(
+      'searchSignalsRegex returns results with SignalOccurrence objects',
+      () {
+        final results = hierarchy.searchSignalsRegex('Top/**/carry_out');
+        expect(results.length, 1);
+        expect(results.first.signal, isNotNull);
+        expect(results.first.signal!.name, 'carry_out');
+        expect(results.first.signal!.width, 1);
+      },
+    );
 
     test('searchOccurrencesRegex returns OccurrenceSearchResult objects', () {
       final results = hierarchy.searchOccurrencesRegex('Top/**/Cache');
@@ -319,45 +332,49 @@ void main() {
       // User's scenario: "*m" should match signals ending in "m".
       final results = hierarchy.searchSignalPathsRegex('Top/*_m');
       expect(
-          results,
-          containsAll([
-            'Top/data_m',
-            'Top/addr_m',
-            'Top/flag_m',
-          ]));
+        results,
+        containsAll([
+          'Top/data_m',
+          'Top/addr_m',
+          'Top/flag_m',
+        ]),
+      );
       expect(results.length, 3);
     });
 
     test('glob * at end matches prefix pattern', () {
       final results = hierarchy.searchSignalPathsRegex('Top/CPU/RegFile/d*');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/RegFile/d0',
-            'Top/CPU/RegFile/d1',
-            'Top/CPU/RegFile/d2',
-            'Top/CPU/RegFile/d15',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/RegFile/d0',
+          'Top/CPU/RegFile/d1',
+          'Top/CPU/RegFile/d2',
+          'Top/CPU/RegFile/d15',
+        ]),
+      );
       expect(results.length, 4);
     });
 
     test('glob * in the middle matches infix pattern', () {
       // *d*a* should match names containing 'd' followed eventually by 'a'
-      final results =
-          hierarchy.searchSignalPathsRegex('Top/Memory/Cache/*d*a*');
+      final results = hierarchy.searchSignalPathsRegex(
+        'Top/Memory/Cache/*d*a*',
+      );
       expect(results, contains('Top/Memory/Cache/data'));
     });
 
     test('glob * matches all signals (like .*)', () {
       final results = hierarchy.searchSignalPathsRegex('Top/CPU/ALU/*');
       expect(
-          results,
-          containsAll([
-            'Top/CPU/ALU/a',
-            'Top/CPU/ALU/b',
-            'Top/CPU/ALU/result',
-            'Top/CPU/ALU/carry_out',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/ALU/a',
+          'Top/CPU/ALU/b',
+          'Top/CPU/ALU/result',
+          'Top/CPU/ALU/carry_out',
+        ]),
+      );
       expect(results.length, 4);
     });
 
@@ -371,12 +388,13 @@ void main() {
     test('glob * combined with ** for deep search', () {
       final results = hierarchy.searchSignalPathsRegex('Top/**/*_m');
       expect(
-          results,
-          containsAll([
-            'Top/data_m',
-            'Top/addr_m',
-            'Top/flag_m',
-          ]));
+        results,
+        containsAll([
+          'Top/data_m',
+          'Top/addr_m',
+          'Top/flag_m',
+        ]),
+      );
       expect(results.length, 3);
     });
 
@@ -397,29 +415,32 @@ void main() {
       final results = hierarchy.searchSignalPathsRegex('Top/Memory/**');
       // Should collect all signals in Memory subtree
       expect(
-          results,
-          containsAll([
-            'Top/Memory/Cache/clk',
-            'Top/Memory/Cache/addr',
-            'Top/Memory/Cache/data',
-            'Top/Memory/Cache/hit',
-            'Top/Memory/DRAM/clk',
-            'Top/Memory/DRAM/cas',
-            'Top/Memory/DRAM/ras',
-          ]));
+        results,
+        containsAll([
+          'Top/Memory/Cache/clk',
+          'Top/Memory/Cache/addr',
+          'Top/Memory/Cache/data',
+          'Top/Memory/Cache/hit',
+          'Top/Memory/DRAM/clk',
+          'Top/Memory/DRAM/cas',
+          'Top/Memory/DRAM/ras',
+        ]),
+      );
       expect(results.length, 7);
     });
 
     test('multiple ** segments work', () {
-      final results =
-          hierarchy.searchSignalPathsRegex('**/(CPU|Memory)/**/clk');
+      final results = hierarchy.searchSignalPathsRegex(
+        '**/(CPU|Memory)/**/clk',
+      );
       expect(
-          results,
-          containsAll([
-            'Top/CPU/RegFile/clk',
-            'Top/Memory/Cache/clk',
-            'Top/Memory/DRAM/clk',
-          ]));
+        results,
+        containsAll([
+          'Top/CPU/RegFile/clk',
+          'Top/Memory/Cache/clk',
+          'Top/Memory/DRAM/clk',
+        ]),
+      );
     });
   });
 
@@ -489,9 +510,11 @@ void main() {
     test('searchOccurrences with glob pattern finds modules', () {
       // Pattern: *Mux* should find MuxUnit (auto-prepended with **/)
       final results = hierarchy.searchOccurrences('*Mux*');
-      expect(results, isNotEmpty,
-          reason:
-              'searchOccurrences should dispatch to regex for glob patterns');
+      expect(
+        results,
+        isNotEmpty,
+        reason: 'searchOccurrences should dispatch to regex for glob patterns',
+      );
       expect(results.any((r) => r.name == 'MuxUnit'), isTrue);
     });
 
@@ -504,8 +527,11 @@ void main() {
     test('searchOccurrences with .* matches at one level', () {
       // */.*  matches any child one level below root
       final results = hierarchy.searchOccurrences('*/.*/.*');
-      expect(results.length, greaterThanOrEqualTo(3),
-          reason: 'Should match ALU, Decoder, MuxUnit, Cache, DRAM, UART');
+      expect(
+        results.length,
+        greaterThanOrEqualTo(3),
+        reason: 'Should match ALU, Decoder, MuxUnit, Cache, DRAM, UART',
+      );
     });
 
     test('searchOccurrences with explicit path pattern', () {

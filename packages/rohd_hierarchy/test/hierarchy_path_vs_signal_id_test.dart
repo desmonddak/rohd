@@ -74,11 +74,15 @@ void main() {
       final results = adapter.searchSignals('clk');
       expect(results, isNotEmpty);
       for (final r in results) {
-        expect(r.signal, isNotNull,
-            reason: 'SignalOccurrence should be resolved for "${r.signalId}"');
+        expect(
+          r.signal,
+          isNotNull,
+          reason: 'SignalOccurrence should be resolved for "${r.signalId}"',
+        );
       }
-      final clkResult =
-          results.firstWhere((r) => r.path.last == 'clk' && r.path.length == 2);
+      final clkResult = results.firstWhere(
+        (r) => r.path.last == 'clk' && r.path.length == 2,
+      );
       expect(clkResult.signal!.path(), 'abcd/clk');
       expect(clkResult.signal!.path(separator: '.'), 'abcd.clk');
     });
@@ -86,8 +90,9 @@ void main() {
     test('searchSignals signalId is walker-built (slash) path', () {
       final results = adapter.searchSignals('clk');
       expect(results, isNotEmpty);
-      final clkResult =
-          results.firstWhere((r) => r.path.last == 'clk' && r.path.length == 2);
+      final clkResult = results.firstWhere(
+        (r) => r.path.last == 'clk' && r.path.length == 2,
+      );
       expect(clkResult.signalId, 'abcd/clk');
     });
 
@@ -102,8 +107,11 @@ void main() {
       final results = adapter.searchSignalsRegex('**/clk');
       expect(results.length, greaterThanOrEqualTo(2));
       for (final r in results) {
-        expect(r.signal, isNotNull,
-            reason: 'SignalOccurrence should be resolved for "${r.signalId}"');
+        expect(
+          r.signal,
+          isNotNull,
+          reason: 'SignalOccurrence should be resolved for "${r.signalId}"',
+        );
         expect(r.signal!.path(), contains('/'));
       }
     });
@@ -185,7 +193,7 @@ void main() {
       HierarchyOccurrence(
         name: 'Top',
         children: [
-          HierarchyOccurrence(name: 'sub', signals: [s])
+          HierarchyOccurrence(name: 'sub', signals: [s]),
         ],
       ).buildAddresses();
       expect(s.parent!.path(), 'Top/sub');

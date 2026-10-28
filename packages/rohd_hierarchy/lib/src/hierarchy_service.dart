@@ -33,10 +33,11 @@ abstract mixin class HierarchyService {
   /// Find an occurrence by its [OccurrenceAddress].  O(depth).
   HierarchyOccurrence? occurrenceByAddress(OccurrenceAddress address) =>
       address.path.fold<HierarchyOccurrence?>(
-          root,
-          (node, idx) => node != null && idx >= 0 && idx < node.children.length
-              ? node.children[idx]
-              : null);
+        root,
+        (node, idx) => node != null && idx >= 0 && idx < node.children.length
+            ? node.children[idx]
+            : null,
+      );
 
   /// Find a signal by its [OccurrenceAddress].
   ///
@@ -47,7 +48,8 @@ abstract mixin class HierarchyService {
       return null;
     }
     final node = occurrenceByAddress(
-        OccurrenceAddress(address.path.sublist(0, address.path.length - 1)));
+      OccurrenceAddress(address.path.sublist(0, address.path.length - 1)),
+    );
     final sigIdx = address.path.last;
     return (node != null && sigIdx >= 0 && sigIdx < node.signals.length)
         ? node.signals[sigIdx]
@@ -86,8 +88,10 @@ abstract mixin class HierarchyService {
   /// Set [asSignal] to `true` when you know the address points to a signal
   /// (the last index is a signal offset rather than a child offset).
   /// When `false` (default), all indices are treated as child offsets.
-  String? addressToPathname(OccurrenceAddress address,
-      {bool asSignal = false}) {
+  String? addressToPathname(
+    OccurrenceAddress address, {
+    bool asSignal = false,
+  }) {
     if (address.path.isEmpty) {
       return root.name;
     }
@@ -97,16 +101,19 @@ abstract mixin class HierarchyService {
 
     final walked = indices
         .sublist(0, moduleEndIdx)
-        .fold<({List<String> parts, HierarchyOccurrence node})?>((
-      parts: [root.name],
-      node: root,
-    ), (cur, idx) {
-      if (cur == null || idx < 0 || idx >= cur.node.children.length) {
-        return null;
-      }
-      final child = cur.node.children[idx];
-      return (parts: [...cur.parts, child.name], node: child);
-    });
+        .fold<({List<String> parts, HierarchyOccurrence node})?>(
+          (
+            parts: [root.name],
+            node: root,
+          ),
+          (cur, idx) {
+            if (cur == null || idx < 0 || idx >= cur.node.children.length) {
+              return null;
+            }
+            final child = cur.node.children[idx];
+            return (parts: [...cur.parts, child.name], node: child);
+          },
+        );
     if (walked == null) {
       return null;
     }
@@ -114,8 +121,10 @@ abstract mixin class HierarchyService {
     if (asSignal && indices.isNotEmpty) {
       final sigIdx = indices.last;
       return (sigIdx >= 0 && sigIdx < walked.node.signals.length)
-          ? [...walked.parts, walked.node.signals[sigIdx].name]
-              .join(hierarchyPathSeparator)
+          ? [
+              ...walked.parts,
+              walked.node.signals[sigIdx].name,
+            ].join(hierarchyPathSeparator)
           : null;
     }
     return walked.parts.join(hierarchyPathSeparator);
@@ -148,7 +157,13 @@ abstract mixin class HierarchyService {
     final parts = _splitPath(query);
     final results = <String>[];
     _searchSignalsRecursive(
-        root, [root.name], parts, 0, results, effectiveLimit);
+      root,
+      [root.name],
+      parts,
+      0,
+      results,
+      effectiveLimit,
+    );
     return results;
   }
 
@@ -174,7 +189,9 @@ abstract mixin class HierarchyService {
   /// This is useful for tree-view filtering: show an occurrence only when
   /// it or one of its descendants matches the user's query.
   static bool isOccurrenceMatching(
-      HierarchyOccurrence node, String? searchTerm) {
+    HierarchyOccurrence node,
+    String? searchTerm,
+  ) {
     if (searchTerm == null || searchTerm.isEmpty) {
       return true;
     }
@@ -190,7 +207,10 @@ abstract mixin class HierarchyService {
   }
 
   static bool _isOccurrenceMatchingRecursive(
-      HierarchyOccurrence node, List<String> queryParts, int queryIdx) {
+    HierarchyOccurrence node,
+    List<String> queryParts,
+    int queryIdx,
+  ) {
     if (queryIdx >= queryParts.length) {
       return true;
     }
@@ -205,8 +225,10 @@ abstract mixin class HierarchyService {
       return true;
     }
 
-    return node.children.any((child) =>
-        _isOccurrenceMatchingRecursive(child, queryParts, nextQueryIdx));
+    return node.children.any(
+      (child) =>
+          _isOccurrenceMatchingRecursive(child, queryParts, nextQueryIdx),
+    );
   }
 
   /// Search for signals and return enriched [SignalSearchResult] objects.
@@ -241,7 +263,13 @@ abstract mixin class HierarchyService {
     final parts = _splitPath(query);
     final results = <String>[];
     _searchOccurrencePathsRecursive(
-        root, [root.name], parts, 0, results, effectiveLimit);
+      root,
+      [root.name],
+      parts,
+      0,
+      results,
+      effectiveLimit,
+    );
     return results;
   }
 
@@ -306,9 +334,11 @@ abstract mixin class HierarchyService {
         current == root &&
         current.name.startsWith(prefix)) {
       final rootPath = current.name;
-      suggestions.add(current.children.isNotEmpty
-          ? '$rootPath$hierarchyPathSeparator'
-          : rootPath);
+      suggestions.add(
+        current.children.isNotEmpty
+            ? '$rootPath$hierarchyPathSeparator'
+            : rootPath,
+      );
     }
 
     for (final child in current.children) {
@@ -316,7 +346,8 @@ abstract mixin class HierarchyService {
         final pathParts = [...completedParts, child.name];
         final path = pathParts.join(hierarchyPathSeparator);
         suggestions.add(
-            child.children.isNotEmpty ? '$path$hierarchyPathSeparator' : path);
+          child.children.isNotEmpty ? '$path$hierarchyPathSeparator' : path,
+        );
         if (suggestions.length >= effectiveLimit) {
           break;
         }
@@ -340,7 +371,8 @@ abstract mixin class HierarchyService {
       return searchOccurrencesRegex(pattern, limit: effectiveLimit);
     }
     return _toOccurrenceResults(
-        searchOccurrencePaths(query, limit: effectiveLimit));
+      searchOccurrencePaths(query, limit: effectiveLimit),
+    );
   }
 
   // ───────────────── Regex search ─────────────────
@@ -379,7 +411,13 @@ abstract mixin class HierarchyService {
     final compiled = _compileSegments(segments);
     final results = <String>[];
     _searchSignalsRegex(
-        root, [root.name], compiled, 0, results, effectiveLimit);
+      root,
+      [root.name],
+      compiled,
+      0,
+      results,
+      effectiveLimit,
+    );
     return results;
   }
 
@@ -402,14 +440,21 @@ abstract mixin class HierarchyService {
     final compiled = _compileSegments(segments);
     final results = <String>[];
     _matchOccurrencesRegex(
-        root, [root.name], compiled, 0, results, effectiveLimit);
+      root,
+      [root.name],
+      compiled,
+      0,
+      results,
+      effectiveLimit,
+    );
     return results;
   }
 
   /// Search for occurrences by regex pattern and return enriched results.
-  List<OccurrenceSearchResult> searchOccurrencesRegex(String pattern,
-          {int? limit}) =>
-      _toOccurrenceResults(searchOccurrencePathsRegex(pattern, limit: limit));
+  List<OccurrenceSearchResult> searchOccurrencesRegex(
+    String pattern, {
+    int? limit,
+  }) => _toOccurrenceResults(searchOccurrencePathsRegex(pattern, limit: limit));
 
   // ─────────────────── Utility helpers ───────────────────
 
@@ -426,8 +471,9 @@ abstract mixin class HierarchyService {
         return null;
       }
       final end = pre.length < s.length ? pre.length : s.length;
-      final j =
-          Iterable<int>.generate(end).takeWhile((i) => pre[i] == s[i]).length;
+      final j = Iterable<int>.generate(
+        end,
+      ).takeWhile((i) => pre[i] == s[i]).length;
       return j > 0 ? pre.substring(0, j) : null;
     });
     return prefix;
@@ -519,8 +565,10 @@ abstract mixin class HierarchyService {
           return;
         }
         if (signalQuery.isEmpty || signal.name.startsWith(signalQuery)) {
-          final fullPath =
-              [...pathSoFar, signal.name].join(hierarchyPathSeparator);
+          final fullPath = [
+            ...pathSoFar,
+            signal.name,
+          ].join(hierarchyPathSeparator);
           results.add(fullPath);
         }
       }
@@ -593,11 +641,12 @@ abstract mixin class HierarchyService {
   /// Recursively search for occurrences matching query parts, returning
   /// the occurrences.
   void _matchOccurrencesRecursive(
-      HierarchyOccurrence node,
-      List<String> queryParts,
-      int qIdx,
-      List<HierarchyOccurrence> results,
-      int limit) {
+    HierarchyOccurrence node,
+    List<String> queryParts,
+    int qIdx,
+    List<HierarchyOccurrence> results,
+    int limit,
+  ) {
     if (results.length >= limit) {
       return;
     }
@@ -721,8 +770,10 @@ abstract mixin class HierarchyService {
             if (results.length >= limit) {
               return;
             }
-            final fullPath =
-                [...pathSoFar, signal.name].join(hierarchyPathSeparator);
+            final fullPath = [
+              ...pathSoFar,
+              signal.name,
+            ].join(hierarchyPathSeparator);
             results.add(fullPath);
           }
         } else {
@@ -737,7 +788,8 @@ abstract mixin class HierarchyService {
               }
               if (sigSeg.regex!.hasMatch(signal.name)) {
                 results.add(
-                    [...pathSoFar, signal.name].join(hierarchyPathSeparator));
+                  [...pathSoFar, signal.name].join(hierarchyPathSeparator),
+                );
               }
             }
           }
@@ -811,7 +863,10 @@ abstract mixin class HierarchyService {
   /// Returns a set of possible next-segment indices (branching is needed
   /// because `**` can consume zero or more levels).
   Set<int> _matchNode(
-      String nodeName, List<_RegexSegment> segments, int segIdx) {
+    String nodeName,
+    List<_RegexSegment> segments,
+    int segIdx,
+  ) {
     final results = <int>{};
     if (segIdx >= segments.length) {
       // No more segments to match — nothing to advance to.
@@ -869,7 +924,5 @@ class _RegexSegment {
   final bool isGlobStar;
 
   _RegexSegment(this.regex) : isGlobStar = false;
-  _RegexSegment.globStar()
-      : regex = null,
-        isGlobStar = true;
+  _RegexSegment.globStar() : regex = null, isGlobStar = true;
 }

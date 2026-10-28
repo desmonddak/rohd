@@ -155,13 +155,15 @@ class SignalOccurrence {
   /// (remaining dimensions) and can be further expanded.
   /// Empty if this is not a struct/array with known sub-fields.
   List<
-      ({
-        String expectedName,
-        String fieldLabel,
-        int width,
-        int startBit,
-        Map<String, Object?>? subLogicType,
-      })> get subFieldDescriptors {
+    ({
+      String expectedName,
+      String fieldLabel,
+      int width,
+      int startBit,
+      Map<String, Object?>? subLogicType,
+    })
+  >
+  get subFieldDescriptors {
     if (logicType == null) {
       return const [];
     }
@@ -174,13 +176,15 @@ class SignalOccurrence {
   /// This is static so it can be called recursively for nested arrays
   /// without needing a full [SignalOccurrence].
   static List<
-      ({
-        String expectedName,
-        String fieldLabel,
-        int width,
-        int startBit,
-        Map<String, Object?>? subLogicType,
-      })> subFieldDescriptorsForType(
+    ({
+      String expectedName,
+      String fieldLabel,
+      int width,
+      int startBit,
+      Map<String, Object?>? subLogicType,
+    })
+  >
+  subFieldDescriptorsForType(
     Map<String, Object?> logicType,
     String parentName,
   ) {
@@ -213,8 +217,9 @@ class SignalOccurrence {
       final outerDim = arrayDims.first as int;
       // For multi-dimensional arrays, each outer element spans all
       // remaining dimensions times the leaf element width.
-      final remainingDims =
-          arrayDims.length > 1 ? arrayDims.sublist(1).cast<int>() : <int>[];
+      final remainingDims = arrayDims.length > 1
+          ? arrayDims.sublist(1).cast<int>()
+          : <int>[];
       final elementWidth = remainingDims.isEmpty
           ? leafWidth
           : remainingDims.fold<int>(leafWidth, (acc, d) => acc * d);

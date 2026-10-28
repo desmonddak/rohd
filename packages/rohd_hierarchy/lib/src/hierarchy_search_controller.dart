@@ -41,8 +41,8 @@ class HierarchySearchController<R> {
   HierarchySearchController({
     required List<R> Function(String normalizedQuery) searchFn,
     required String Function(String rawQuery) normalizeFn,
-  })  : _searchFn = searchFn,
-        _normalizeFn = normalizeFn;
+  }) : _searchFn = searchFn,
+       _normalizeFn = normalizeFn;
 
   /// Create a controller for **signal** search on the given
   /// [HierarchyService].
@@ -52,13 +52,12 @@ class HierarchySearchController<R> {
   /// hierarchy separator in regex patterns).
   factory HierarchySearchController.forSignals(
     HierarchyService hierarchy,
-  ) =>
-      HierarchySearchController<R>(
-        searchFn: (q) => hierarchy.searchSignals(q) as List<R>,
-        normalizeFn: (q) => HierarchyService.hasRegexChars(q)
-            ? q
-            : HierarchySearchResult.normalizeQuery(q),
-      );
+  ) => HierarchySearchController<R>(
+    searchFn: (q) => hierarchy.searchSignals(q) as List<R>,
+    normalizeFn: (q) => HierarchyService.hasRegexChars(q)
+        ? q
+        : HierarchySearchResult.normalizeQuery(q),
+  );
 
   /// Create a controller for **occurrence** search on the given
   /// [HierarchyService].
@@ -68,13 +67,12 @@ class HierarchySearchController<R> {
   /// hierarchy separator in regex patterns).
   factory HierarchySearchController.forOccurrences(
     HierarchyService hierarchy,
-  ) =>
-      HierarchySearchController<R>(
-        searchFn: (q) => hierarchy.searchOccurrences(q) as List<R>,
-        normalizeFn: (q) => HierarchyService.hasRegexChars(q)
-            ? q
-            : HierarchySearchResult.normalizeQuery(q),
-      );
+  ) => HierarchySearchController<R>(
+    searchFn: (q) => hierarchy.searchOccurrences(q) as List<R>,
+    normalizeFn: (q) => HierarchyService.hasRegexChars(q)
+        ? q
+        : HierarchySearchResult.normalizeQuery(q),
+  );
 
   // ─────────────── State accessors ───────────────
 

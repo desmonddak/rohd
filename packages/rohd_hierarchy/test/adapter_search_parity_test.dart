@@ -38,105 +38,106 @@ SignalOccurrence? _resolve(HierarchyService svc, String path) {
 /// VCD-style: HierarchyNode tree with children/signals populated inline.
 /// This is what `wellen` produces when loading a VCD/FST file.
 BaseHierarchyAdapter _buildVcdAdapter() => BaseHierarchyAdapter.fromTree(
+  HierarchyOccurrence(
+    name: 'Abcd',
+    signals: [
+      SignalOccurrence(name: 'clk', width: 1),
+      SignalOccurrence(name: 'resetn', width: 1),
+      SignalOccurrence(name: 'arvalid_s', width: 1),
+    ],
+    children: [
       HierarchyOccurrence(
-        name: 'Abcd',
+        name: 'lab',
         signals: [
           SignalOccurrence(name: 'clk', width: 1),
-          SignalOccurrence(name: 'resetn', width: 1),
-          SignalOccurrence(name: 'arvalid_s', width: 1),
+          SignalOccurrence(name: 'reset', width: 1),
+          SignalOccurrence(name: 'fromUpstream_request__st', width: 64),
         ],
         children: [
           HierarchyOccurrence(
-            name: 'lab',
+            name: 'cam',
             signals: [
-              SignalOccurrence(name: 'clk', width: 1),
-              SignalOccurrence(name: 'reset', width: 1),
-              SignalOccurrence(name: 'fromUpstream_request__st', width: 64),
-            ],
-            children: [
-              HierarchyOccurrence(
-                name: 'cam',
-                signals: [
-                  SignalOccurrence(name: 'hit', width: 1),
-                  SignalOccurrence(name: 'entry', width: 32),
-                ],
-              ),
+              SignalOccurrence(name: 'hit', width: 1),
+              SignalOccurrence(name: 'entry', width: 32),
             ],
           ),
         ],
       ),
-    );
+    ],
+  ),
+);
 
 /// Netlist JSON-style: flat-map adapter (like what DevTools/schematic viewer
 /// builds from ROHD inspector JSON or netlist JSON).
 /// Children and signals live in the adapter's flat maps, NOT inside
 /// the HierarchyNode objects.
-NetlistHierarchyAdapter _buildJsonAdapter() =>
-    NetlistHierarchyAdapter.fromJson(jsonEncode({
-      'modules': {
-        'Abcd': {
-          'attributes': {'top': 1},
-          'ports': {
-            'clk': {
-              'direction': 'input',
-              'bits': [1]
-            },
-            'resetn': {
-              'direction': 'input',
-              'bits': [2]
-            },
-            'arvalid_s': {
-              'direction': 'input',
-              'bits': [3]
-            },
+NetlistHierarchyAdapter _buildJsonAdapter() => NetlistHierarchyAdapter.fromJson(
+  jsonEncode({
+    'modules': {
+      'Abcd': {
+        'attributes': {'top': 1},
+        'ports': {
+          'clk': {
+            'direction': 'input',
+            'bits': [1],
           },
-          'netnames': <String, dynamic>{},
-          'cells': {
-            'lab': {
-              'type': 'Lab',
-              'connections': <String, dynamic>{},
-            },
+          'resetn': {
+            'direction': 'input',
+            'bits': [2],
+          },
+          'arvalid_s': {
+            'direction': 'input',
+            'bits': [3],
           },
         },
-        'Lab': {
-          'ports': {
-            'clk': {
-              'direction': 'input',
-              'bits': [10]
-            },
-            'reset': {
-              'direction': 'input',
-              'bits': [11]
-            },
-            'fromUpstream_request__st': {
-              'direction': 'input',
-              'bits': List.generate(64, (i) => 100 + i)
-            },
+        'netnames': <String, dynamic>{},
+        'cells': {
+          'lab': {
+            'type': 'Lab',
+            'connections': <String, dynamic>{},
           },
-          'netnames': <String, dynamic>{},
-          'cells': {
-            'cam': {
-              'type': 'Cam',
-              'connections': <String, dynamic>{},
-            },
-          },
-        },
-        'Cam': {
-          'ports': {
-            'hit': {
-              'direction': 'input',
-              'bits': [200]
-            },
-            'entry': {
-              'direction': 'input',
-              'bits': List.generate(32, (i) => 300 + i)
-            },
-          },
-          'netnames': <String, dynamic>{},
-          'cells': <String, dynamic>{},
         },
       },
-    }));
+      'Lab': {
+        'ports': {
+          'clk': {
+            'direction': 'input',
+            'bits': [10],
+          },
+          'reset': {
+            'direction': 'input',
+            'bits': [11],
+          },
+          'fromUpstream_request__st': {
+            'direction': 'input',
+            'bits': List.generate(64, (i) => 100 + i),
+          },
+        },
+        'netnames': <String, dynamic>{},
+        'cells': {
+          'cam': {
+            'type': 'Cam',
+            'connections': <String, dynamic>{},
+          },
+        },
+      },
+      'Cam': {
+        'ports': {
+          'hit': {
+            'direction': 'input',
+            'bits': [200],
+          },
+          'entry': {
+            'direction': 'input',
+            'bits': List.generate(32, (i) => 300 + i),
+          },
+        },
+        'netnames': <String, dynamic>{},
+        'cells': <String, dynamic>{},
+      },
+    },
+  }),
+);
 
 void main() {
   late HierarchyService vcdService;
@@ -198,28 +199,40 @@ void main() {
     });
 
     test('searchSignals plain query — same result names', () {
-      final vcdResults =
-          vcdService.searchSignals('clk').map((r) => r.name).toSet();
-      final jsonResults =
-          jsonService.searchSignals('clk').map((r) => r.name).toSet();
+      final vcdResults = vcdService
+          .searchSignals('clk')
+          .map((r) => r.name)
+          .toSet();
+      final jsonResults = jsonService
+          .searchSignals('clk')
+          .map((r) => r.name)
+          .toSet();
       expect(vcdResults, isNotEmpty);
       expect(vcdResults, jsonResults);
     });
 
     test('searchSignals glob query — same result names', () {
-      final vcdResults =
-          vcdService.searchSignals('**/clk').map((r) => r.name).toSet();
-      final jsonResults =
-          jsonService.searchSignals('**/clk').map((r) => r.name).toSet();
+      final vcdResults = vcdService
+          .searchSignals('**/clk')
+          .map((r) => r.name)
+          .toSet();
+      final jsonResults = jsonService
+          .searchSignals('**/clk')
+          .map((r) => r.name)
+          .toSet();
       expect(vcdResults, isNotEmpty);
       expect(vcdResults, jsonResults);
     });
 
     test('searchSignals path query — same result names', () {
-      final vcdResults =
-          vcdService.searchSignals('lab/clk').map((r) => r.name).toSet();
-      final jsonResults =
-          jsonService.searchSignals('lab/clk').map((r) => r.name).toSet();
+      final vcdResults = vcdService
+          .searchSignals('lab/clk')
+          .map((r) => r.name)
+          .toSet();
+      final jsonResults = jsonService
+          .searchSignals('lab/clk')
+          .map((r) => r.name)
+          .toSet();
       expect(vcdResults, isNotEmpty);
       expect(vcdResults, jsonResults);
     });

@@ -13,37 +13,37 @@ import 'package:test/test.dart';
 /// Minimal hierarchy for testing the controller with a real
 /// HierarchyService.
 HierarchyOccurrence _buildTestTree() => HierarchyOccurrence(
-      name: 'Top',
+  name: 'Top',
+  signals: [
+    SignalOccurrence(name: 'clk', width: 1),
+    SignalOccurrence(name: 'rst', width: 1),
+  ],
+  children: [
+    HierarchyOccurrence(
+      name: 'cpu',
       signals: [
-        SignalOccurrence(name: 'clk', width: 1),
-        SignalOccurrence(name: 'rst', width: 1),
+        SignalOccurrence(name: 'data_in', width: 8),
+        SignalOccurrence(name: 'data_out', width: 8),
       ],
       children: [
         HierarchyOccurrence(
-          name: 'cpu',
+          name: 'alu',
           signals: [
-            SignalOccurrence(name: 'data_in', width: 8),
-            SignalOccurrence(name: 'data_out', width: 8),
-          ],
-          children: [
-            HierarchyOccurrence(
-              name: 'alu',
-              signals: [
-                SignalOccurrence(name: 'a', width: 16),
-                SignalOccurrence(name: 'b', width: 16),
-                SignalOccurrence(name: 'result', width: 16),
-              ],
-            ),
-          ],
-        ),
-        HierarchyOccurrence(
-          name: 'mem',
-          signals: [
-            SignalOccurrence(name: 'addr', width: 32),
+            SignalOccurrence(name: 'a', width: 16),
+            SignalOccurrence(name: 'b', width: 16),
+            SignalOccurrence(name: 'result', width: 16),
           ],
         ),
       ],
-    );
+    ),
+    HierarchyOccurrence(
+      name: 'mem',
+      signals: [
+        SignalOccurrence(name: 'addr', width: 32),
+      ],
+    ),
+  ],
+);
 
 void main() {
   late BaseHierarchyAdapter hierarchy;
@@ -354,9 +354,9 @@ void main() {
     });
 
     test('controller forSignals works with dot-separated hierarchy', () {
-      final ctrl =
-          HierarchySearchController<SignalSearchResult>.forSignals(vcdHierarchy)
-            ..updateQuery('childA/clk');
+      final ctrl = HierarchySearchController<SignalSearchResult>.forSignals(
+        vcdHierarchy,
+      )..updateQuery('childA/clk');
       expect(ctrl.results, isNotEmpty);
       expect(ctrl.results.first.signal!.path(), 'testbench/childA/clk');
     });
@@ -454,8 +454,10 @@ void main() {
     });
 
     test('signalByAddress works with full path', () {
-      final addr =
-          OccurrenceAddress.tryFromPathname('Top/clk', rohdHierarchy.root);
+      final addr = OccurrenceAddress.tryFromPathname(
+        'Top/clk',
+        rohdHierarchy.root,
+      );
       final result = rohdHierarchy.signalByAddress(addr!);
       expect(result, isNotNull);
       expect(result!.name, 'clk');
@@ -463,7 +465,9 @@ void main() {
 
     test('signalByAddress works with nested path', () {
       final addr = OccurrenceAddress.tryFromPathname(
-          'Top/cpu/alu/a', rohdHierarchy.root);
+        'Top/cpu/alu/a',
+        rohdHierarchy.root,
+      );
       final result = rohdHierarchy.signalByAddress(addr!);
       expect(result, isNotNull);
       expect(result!.name, 'a');
@@ -498,8 +502,11 @@ void main() {
       signalCtrl.updateQuery('data');
       final vcdNames = signalCtrl.results.map((r) => r.name).toSet();
 
-      expect(rohdNames, vcdNames,
-          reason: 'Same query should find same signals regardless of source');
+      expect(
+        rohdNames,
+        vcdNames,
+        reason: 'Same query should find same signals regardless of source',
+      );
     });
   });
 }

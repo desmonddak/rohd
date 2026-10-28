@@ -139,8 +139,7 @@ void main() {
     service = BaseHierarchyAdapter.fromTree(root);
   });
 
-  group(
-      'DevTools flow — local signal IDs '
+  group('DevTools flow — local signal IDs '
       '→ BaseHierarchyAdapter.fromTree → search', () {
     // Basic search, address, glob, and controller behavior is covered by
     // hierarchy_search_controller_test, regex_search_test,
@@ -162,8 +161,10 @@ void main() {
     });
 
     test('signalByAddress resolves despite local IDs', () {
-      final addr =
-          OccurrenceAddress.tryFromPathname('Abcd/lab/cam/hit', service.root);
+      final addr = OccurrenceAddress.tryFromPathname(
+        'Abcd/lab/cam/hit',
+        service.root,
+      );
       expect(addr, isNotNull);
       final hit = service.signalByAddress(addr!);
       expect(hit, isNotNull);
@@ -193,7 +194,9 @@ void main() {
 
     test('local signal IDs do not break address resolution', () {
       final addr = OccurrenceAddress.tryFromPathname(
-          'Abcd/lab/cam/match_out', service.root);
+        'Abcd/lab/cam/match_out',
+        service.root,
+      );
       expect(addr, isNotNull);
       final result = service.signalByAddress(addr!);
       expect(result, isNotNull);

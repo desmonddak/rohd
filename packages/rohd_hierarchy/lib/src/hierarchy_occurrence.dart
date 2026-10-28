@@ -60,8 +60,8 @@ class HierarchyOccurrence {
     this.isPrimitive = false,
     List<SignalOccurrence>? signals,
     List<HierarchyOccurrence>? children,
-  })  : signals = signals ?? [],
-        children = children ?? [];
+  }) : signals = signals ?? [],
+       children = children ?? [];
 
   /// Compute the full hierarchical path by walking up the parent chain.
   ///
@@ -160,7 +160,7 @@ class HierarchyOccurrence {
   /// Entries may be null if a particular sub-field signal wasn't found
   /// (e.g. the netlist didn't emit it, or it was optimized away).
   List<({SignalOccurrence? signal, String fieldLabel, int width, int startBit})>
-      findSubFieldSignals(SignalOccurrence parentSignal) {
+  findSubFieldSignals(SignalOccurrence parentSignal) {
     final descriptors = parentSignal.subFieldDescriptors;
     if (descriptors.isEmpty) {
       return const [];
@@ -188,8 +188,10 @@ class HierarchyOccurrence {
   /// Production code should use [signalCount], [computedSignalCount], or
   /// a recursive visitor instead of materializing the full list.
   @visibleForTesting
-  List<SignalOccurrence> depthFirstSignals() =>
-      [...signals, ...children.expand((c) => c.depthFirstSignals())];
+  List<SignalOccurrence> depthFirstSignals() => [
+    ...signals,
+    ...children.expand((c) => c.depthFirstSignals()),
+  ];
 
   /// Total number of signals in this subtree (O(n) recursive count).
   ///

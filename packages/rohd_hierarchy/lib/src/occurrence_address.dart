@@ -118,8 +118,9 @@ class OccurrenceAddress {
         .toList();
 
     // Skip leading segment that matches the root name.
-    final segments =
-        parts.isNotEmpty && parts.first == root.name ? parts.skip(1) : parts;
+    final segments = parts.isNotEmpty && parts.first == root.name
+        ? parts.skip(1)
+        : parts;
 
     ({HierarchyOccurrence node, OccurrenceAddress addr})? step(
       ({HierarchyOccurrence node, OccurrenceAddress addr})? cur,
@@ -139,6 +140,8 @@ class OccurrenceAddress {
     }
 
     return segments.fold<({HierarchyOccurrence node, OccurrenceAddress addr})?>(
-        (node: root, addr: rootAddr), step)?.addr;
+      (node: root, addr: rootAddr),
+      step,
+    )?.addr;
   }
 }
