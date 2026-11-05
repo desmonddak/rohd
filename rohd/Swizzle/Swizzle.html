@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/Swizzle-class.html">Swizzle</a></li>
-    <li class="self-crumb">Swizzle.new constructor</li>
+    <li class="self-crumb"><span class="deprecated">Swizzle.new</span> constructor</li>
   </ol>
   <div class="self-name">Swizzle.new</div>
   <form class="search navbar-right" role="search">
@@ -54,84 +54,26 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">Swizzle</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-signals"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span>, {</span></li>
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.flutter.dev/flutter/dart-core/Deprecated/Deprecated.html">Deprecated</a>(&#39;Use Concat instead.&#39;)</li>
+    </ol>
+  </div>
+      <span class="name deprecated">Swizzle</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-signals"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span>, {</span></li>
 <li><span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;swizzle&#39;</span>, </span></li>
 </ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a <a href="../../rohd/Module-class.html">Module</a> which concatenates <code>signals</code> into one large <a href="../../rohd/Swizzle/out.html">out</a>.</p>
+  <p>Constructs a deprecated <a class="deprecated" href="../../rohd/Swizzle-class.html">Swizzle</a> module.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {super.name = &#39;swizzle&#39;})
-    : _receiverSignals = List.unmodifiable(signals),
-      isNet = signals.any((e) =&gt; e.isNet) {
-  final outputWidth =
-      _receiverSignals.fold(0, (total, signal) =&gt; total + signal.width);
-
-  if (isNet) {
-    out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
-    final internalOut = addInOut(_out, out, width: outputWidth);
-    final reversedSignals = _receiverSignals.reversed.toList(growable: false);
-
-    &#47;&#47; Keep the net-port shape available to synthesis without connecting this
-    &#47;&#47; view to its original signals until it is used as a driver.
-    var start = 0;
-    for (var inputIndex = 0;
-        inputIndex &lt; reversedSignals.length;
-        inputIndex++) {
-      final signal = reversedSignals[inputIndex];
-      final inputName = Naming.unpreferredName(&#39;in$inputIndex&#39;);
-      final inputSource = LogicNet(
-        width: signal.width,
-        naming: Naming.unnamed,
-      );
-      _netInputSources.add(inputSource);
-      final swizzleInput = addInOut(
-        inputName,
-        inputSource,
-        width: signal.width,
-      );
-      _swizzleInputs.add(swizzleInput);
-      internalOut.quietlyMergeSubsetTo(swizzleInput, start: start);
-      start += swizzleInput.width;
-    }
-
-    out.setDriverResolver(() {
-      for (var index = 0; index &lt; reversedSignals.length; index++) {
-        _netInputSources[index] &lt;= reversedSignals[index];
-      }
-    });
-  } else {
-    var idx = 0;
-    for (final signal in _receiverSignals.reversed) {
-      &#47;&#47; Reverse so bit 0 is the last thing in the input list.
-      final inputName = Naming.unpreferredName(&#39;in${idx++}&#39;);
-      _swizzleInputs.add(addInput(inputName, signal, width: signal.width));
-    }
-
-    out = addOutput(_out, width: outputWidth);
-
-    _execute(); &#47;&#47; for initial values
-    for (final swizzleInput in _swizzleInputs) {
-      swizzleInput.glitch.listen((args) {
-        _execute();
-      });
-    }
-  }
-
-  out.setReceiverResolver(_resolveReceiver);
-  if (!isNet) {
-    out.setSubsetReceiverResolver(_resolveSubsetReceiver);
-    out.makeUnassignable(
-      reason: &#39;A Swizzle view can only receive continuous assignments.&#39;,
-    );
-  }
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use Concat instead.&#39;)
+Swizzle(super.signals, {super.name = &#39;swizzle&#39;});</code></pre>
 </section>
 
 
@@ -147,7 +89,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/Swizzle-class.html">Swizzle</a></li>
-    <li class="self-crumb">Swizzle.new constructor</li>
+    <li class="self-crumb"><span class="deprecated">Swizzle.new</span> constructor</li>
 </ol>
 
     <h5>Swizzle class</h5>
@@ -159,7 +101,7 @@
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

@@ -71,7 +71,6 @@
               <li><a href="../rohd/LogicEnum-class.html">LogicEnum</a></li>
               <li><a href="../rohd/LogicNet-class.html">LogicNet</a></li>
               <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
-              <li><a class="deprecated" href="../rohd/Port-class.html">Port</a></li>
           </ul></dd>
 
         
@@ -201,6 +200,18 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 </dt>
 <dd>
   Whether the immediate <a href="../rohd/Logic/parentStructure.html">parentStructure</a> is a <code>BaseLogicArray</code>.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="isEmpty" class="property">
+  <span class="name"><a href="../rohd/Logic/isEmpty.html">isEmpty</a></span>
+  <span class="signature">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Whether this signal has no bits.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
@@ -931,6 +942,19 @@ both inclusive.
 
 </dd>
 
+        <dt id="split" class="callable">
+  <span class="name"><a href="../rohd/Logic/split.html">split</a></span><span class="signature">(<wbr><span class="parameter" id="split-param-widths"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">widths</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Splits this signal into LSB-first chunks with the provided <code>widths</code>.
+  
+
+</dd>
+
         <dt id="toString" class="callable">
   <span class="name"><a href="../rohd/Logic/toString.html">toString</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
@@ -1257,7 +1281,7 @@ as the most significant bits.
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

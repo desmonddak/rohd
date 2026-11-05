@@ -74,7 +74,8 @@ number is a two's complement.</p>
   if (width == 0) {
     return this;
   }
-  return mux(this[-1], ~this + 1, this);
+  final twosComplement = (~this + 1).named(&#39;${name}_twosComplement&#39;);
+  return mux(this[-1], twosComplement, this).named(&#39;${name}_absolute&#39;);
 }</code></pre>
 </section>
 
@@ -103,7 +104,7 @@ number is a two's complement.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>

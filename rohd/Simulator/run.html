@@ -79,6 +79,14 @@ it finishes or is stopped.</p>
   &#47;&#47; Yield execution to the event loop before beginning the simulation.
   await Future(() {});
 
+  if (!hasStepsRemaining() &amp;&amp;
+      _simExceptions.isEmpty &amp;&amp;
+      !_simulationEndRequested) {
+    logger.warning(
+      &#39;Simulator.run() completed without any registered or injected events.&#39;,
+    );
+  }
+
   while (hasStepsRemaining() &amp;&amp;
       _simExceptions.isEmpty &amp;&amp;
       !_simulationEndRequested &amp;&amp;
@@ -152,7 +160,7 @@ it finishes or is stopped.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.11
+      0.7.0
   </span>
   
 </footer>
