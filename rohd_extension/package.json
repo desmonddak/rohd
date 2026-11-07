@@ -1,6 +1,6 @@
 {
   "name": "rohd",
-  "displayName": "ROHD",
+  "displayName": "ROHD Tools",
   "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
   "version": "0.2.0",
   "publisher": "intel-corporation",

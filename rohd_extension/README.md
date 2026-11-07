@@ -381,8 +381,8 @@ complete runtime.
 
 The Marketplace identity is `intel-corporation.rohd`. It is an extension pack
 for `intel-corporation.rohd-schematic-viewer` and
-`intel-corporation.rohd-wave-viewer`; installing ROHD from Marketplace installs
-the published viewers as well. ROHD itself remains usable without an open
+`intel-corporation.rohd-wave-viewer`; installing ROHD Tools from Marketplace
+installs the published viewers as well. ROHD Tools remains usable without an open
 viewer, so they are an extension pack rather than hard extension dependencies.
 
 A release tag matching `rohd-vscode-v<version>` triggers the **Extension
